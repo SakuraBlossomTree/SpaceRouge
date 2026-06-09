@@ -6,7 +6,7 @@
 
 # Milestone 2
 
-- [ ] Render Stars
+- [X] Render Stars
 - [ ] Generate Galaxy
 
 # Milestone 3
