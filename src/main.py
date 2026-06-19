@@ -72,16 +72,25 @@ class Inventory:
     def free_space(self):
         return self.space - self.used_space()
 
+class Item:
+    def __init__(self, name, size):
+        self.name = name
+        self.size = size
+
 credits = 100
 inventory = Inventory(20)
 
+FOOD = Item("Food", 2)
+
+
+
 STAR_NAMES = [
     "Sol",
-    "Alpha Centauri",
-    "Sirius",
-    "Vega",
-    "Altair",
-    "Polaris",
+    # "Alpha Centauri",
+    # "Sirius",
+    # "Vega",
+    # "Altair",
+    # "Polaris",
 ]
 
 stars = []
@@ -230,7 +239,7 @@ def add_message(text):
     if len(messages) > 10:
         messages.pop(0)
 
-with open("../story.txt", "r", encoding="utf-8") as f:
+with open("story.txt", "r", encoding="utf-8") as f:
     story_text = f.read()
 
 text_width = 50
@@ -244,7 +253,7 @@ text_x = (WIDTH - text_width) // 2
 text_y = 4
 
 tileset = tcod.tileset.load_tilesheet(
-    "../dejavu10x10_gs_tc.png",
+    "dejavu10x10_gs_tc.png",
     32,
     8,
     tcod.tileset.CHARMAP_TCOD,
@@ -417,6 +426,52 @@ with tcod.context.new(
                 "ESC - Leave"
             )
         
+        elif game_state == "MARKET":
+                    
+                    food_count = 0
+
+                    for item in inventory.items:
+                        if item.name == "Food":
+                            food_count += 1
+
+                    console.print(
+                        WIDTH // 2 - len(current_location.name) // 2,
+                        2,
+                        f"{current_location.name} Market"
+                    )
+
+                    console.print(
+                        2,
+                        4,
+                        f"Credits: {credits}"
+                    )
+
+                    food_price = current_location.market["Food"]
+
+                    console.print(
+                        2,
+                        8,
+                        f"[1] Buy Food ({food_price} credits)"
+                    )
+
+                    console.print(
+                        2,
+                        10,
+                        f"[2] Sell Food ({food_price} credits)"
+                    )
+
+                    console.print(
+                        2,
+                        6,
+                        f"You own: {food_count} Food"
+                    )
+                    
+                    console.print(
+                        2,
+                        12,
+                        "ESC - Leave"
+                    )
+
         elif game_state == "INVENTORY":
             console.print(
                 WIDTH // 2 - 4,
@@ -437,7 +492,7 @@ with tcod.context.new(
                     item.name
                 )
 
-        context.present(console, integer_scaling=True)
+        context.present(console)
 
         for event in tcod.event.get():
             if isinstance(event, tcod.event.Quit):
@@ -519,11 +574,39 @@ with tcod.context.new(
                     if event.sym == tcod.event.KeySym.ESCAPE:
                         game_state = "SYSTEM"
 
+                    elif event.sym == tcod.event.KeySym.N1:
+                        previous_state = game_state
+                        game_state = "MARKET"
+
                 elif game_state == "STORY":
                     game_state = "GALAXY"
                     continue
 
-                
+                elif game_state == "MARKET":
+                    if event.sym == tcod.event.KeySym.ESCAPE:
+                        game_state = previous_state
+                    elif event.sym == tcod.event.KeySym.N1:
+                        food_price = current_location.market["Food"]
+
+                        if credits >= food_price:
+                            if inventory.free_space() >= FOOD.size:
+
+                                credits -= food_price
+
+                                inventory.items.append(FOOD)
+
+                                add_message(
+                                    "Bought Food"
+                                )
+                    elif event.sym == tcod.event.KeySym.N2:
+                        for item in inventory.items:
+                            if item.name == "Food":
+                                inventory.items.remove(item)
+                                credits += food_price
+                                add_message(
+                                    "Sold food"
+                                )
+                                break
 
                 elif game_state == "INVENTORY":
                     if event.sym == tcod.event.KeySym.ESCAPE:

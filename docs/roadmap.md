@@ -15,7 +15,7 @@
 
 # Milestone 4
 
-- [ ] Trading
+- [X] Trading
 
 # Milestone 6
 
