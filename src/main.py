@@ -2,9 +2,10 @@ import tcod
 import random
 import time
 import textwrap
+import math
 
 WIDTH = 80
-HEIGHT = 50
+HEIGHT = 60
 
 console = tcod.console.Console(WIDTH, HEIGHT)
 
@@ -77,6 +78,10 @@ class Item:
         self.name = name
         self.size = size
 
+def twinkle_color(base_color, t, speed=2.0, phase=0.0):
+    brightness = (math.sin(t * speed + phase) + 1) / 2
+    return tuple(int(c * (0.5 + 0.5 * brightness)) for c in base_color)
+
 credits = 100
 inventory = Inventory(20)
 
@@ -86,11 +91,11 @@ FOOD = Item("Food", 2)
 
 STAR_NAMES = [
     "Sol",
-    # "Alpha Centauri",
-    # "Sirius",
-    # "Vega",
-    # "Altair",
-    # "Polaris",
+    "Alpha Centauri",
+    "Sirius",
+    "Vega",
+    "Altair",
+    "Polaris",
 ]
 
 stars = []
@@ -218,7 +223,7 @@ def generate_hub(seed):
 
     return hub
 
-game_state = "STORY"
+game_state = "TITLE"
 
 current_planet = None
 
@@ -231,6 +236,8 @@ current_object = None
 
 current_location = None
 
+current_star = None
+
 messages = []
 
 def add_message(text):
@@ -242,28 +249,72 @@ def add_message(text):
 with open("story.txt", "r", encoding="utf-8") as f:
     story_text = f.read()
 
-text_width = 50
+f.close()
 
-wrapped_lines = textwrap.wrap(
-    story_text,
-    width=text_width
-)
+text_width = 65
+text_x = 6
+text_y = 8
 
-text_x = (WIDTH - text_width) // 2
-text_y = 4
+with open("title.txt", "r", encoding="utf-8") as f:
+    title_text = f.read()
 
-tileset = tcod.tileset.load_tilesheet(
-    "dejavu10x10_gs_tc.png",
-    32,
-    8,
-    tcod.tileset.CHARMAP_TCOD,
-)
+f.close()
+
+tileset = tcod.tileset.load_tilesheet("Haberdash_curses_12x12.png", 16, 16, tcod.tileset.CHARMAP_CP437)
+
+# tileset = tcod.tileset.load_truetype_font("Ubuntu-Regular.ttf", 25, 25)
 
 box_width = WIDTH - 8
 box_height = HEIGHT - 8
 
 box_x = (WIDTH - box_width) // 2
 box_y = (HEIGHT - box_height) // 2
+
+story_char_index = 0
+last_story_time = time.time()
+
+SPIN_FRAMES = ["-", "\\", "|", "/"]
+
+def get_spin_frame(t, speed=8.0, phase=0.0):
+    index = int((t * speed + phase)) % len(SPIN_FRAMES)
+    return SPIN_FRAMES[index]
+
+RAIN_DROPS = []
+RAIN_COUNT = 60
+RAIN_CHARS = ["|", "'", "."]
+
+def init_rain():
+    drops = []
+    for _ in range(RAIN_COUNT):
+        drops.append({
+            "x": random.randint(0, WIDTH - 1),
+            "y": random.uniform(0, HEIGHT - 1),
+            "speed": random.uniform(8.0, 20.0),
+            "char": random.choice(RAIN_CHARS),
+        })
+    return drops
+
+RAIN_DROPS = init_rain()
+
+last_rain_time = time.time()
+
+def update_rain(dt):
+    for drop in RAIN_DROPS:
+        drop["y"] += drop["speed"] * dt
+        if drop["y"] >= HEIGHT:
+            drop["y"] = 0
+            drop["x"] = random.randint(0, WIDTH - 1)
+            drop["speed"] = random.uniform(8.0, 20.0)
+            drop["char"] = random.choice(RAIN_CHARS)
+
+def draw_rain(console):
+    for drop in RAIN_DROPS:
+        y = int(drop["y"])
+        if 0 <= y < HEIGHT:
+            # fade based on speed - faster drops look "closer", brighter
+            brightness = int(100 + (drop["speed"] / 20.0) * 100)
+            color = (brightness, brightness, min(255, brightness + 30))
+            console.print(drop["x"], y, drop["char"], fg=color)
 
 with tcod.context.new(
     columns=WIDTH,
@@ -276,19 +327,77 @@ with tcod.context.new(
     while True:
         console.clear()
 
+        now = time.time()
+        dt = now - last_rain_time
+        last_rain_time = now
+
+        update_rain(dt)
+
+        if game_state == "TITLE":
+
+            draw_rain(console)
+
+            console.print(
+                10,
+                10,
+                text=title_text
+            )
+
+            console.print(
+                WIDTH // 2 - len("Press Enter to start a New Game") // 2,
+                24,
+                text="Press Enter to start a New Game"
+            )
+
         if game_state == "STORY":
+
+            if (
+                story_char_index < len(story_text)
+                and
+                time.time() - last_story_time > 0.03
+            ):
+                story_char_index += 1
+                last_story_time = time.time()
+
+            visible_text = story_text[:story_char_index]
+
+            wrapped_lines = textwrap.wrap(
+                visible_text,
+                width=65
+            )
 
             for i, line in enumerate(wrapped_lines):
                 console.print(
                     text_x,
-                    text_y + i,
+                    text_y + (i * 2),
                     line
                 )
+
+            if (
+                story_char_index < len(story_text)
+                and
+                int(time.time() * 2) % 2
+            ):
+
+                if wrapped_lines:
+                    console.print(
+                        text_x + len(wrapped_lines[-1]),
+                        text_y + ((len(wrapped_lines) - 1) * 2),
+                        "_"
+                    )
+
+                else:
+
+                    console.print(
+                        text_x,
+                        text_y,
+                        "_"
+                    )
 
             console.print(
                 2,
                 HEIGHT - 2,
-                "Press any key to continue..."
+                "SPACE - Skip    ENTER - Continue"
             )
 
         elif game_state == "GALAXY":
@@ -299,27 +408,20 @@ with tcod.context.new(
                 f"Credits: {credits}"
             )
 
-            flash = int(time.time() * 2) % 2
-
-            current_star = None
-
             on_star = False
 
             for star in stars:
 
-                console.print(star.x, star.y, "*")
+                t = time.time()
+                for i, star in enumerate(stars):
+                    color = twinkle_color((255, 255, 0), t, speed=5.0, phase=i*1.3)
+                    console.print(star.x, star.y,"*", fg=color) 
                 
                 if player_x == star.x and player_y == star.y:
                     on_star = True
                     current_star = star
 
-            if on_star:
-                if flash:
-                    console.print(player_x, player_y, "@")
-                else:
-                    console.print(player_x, player_y, "*")
-            else:
-                console.print(player_x,player_y, "@")
+                console.print(current_star.x,current_star.y, "@", fg=(255,255,255))
 
             if current_star:
                 console.print(
@@ -327,6 +429,8 @@ with tcod.context.new(
                     HEIGHT - 1,
                     f"System: {current_star.name}"
                 )
+            
+            
         
         elif game_state == "SYSTEM":
 
@@ -355,11 +459,9 @@ with tcod.context.new(
 
             for station in current_system.stations:
 
-                console.print(
-                    station.x,
-                    station.y,
-                    "S"
-                )
+                t = time.time()
+                frame = get_spin_frame(t, speed=8.0, phase=3)
+                console.print(station.x, station.y, frame, fg=(255, 255, 255))
 
                 if (
                     system_player_x == station.x
@@ -368,10 +470,12 @@ with tcod.context.new(
                 ):
                     current_object = station
 
+                
+
             console.print(
                 system_player_x,
                 system_player_y,
-                "@"
+                "@",
             )
 
             if current_object:
@@ -499,34 +603,29 @@ with tcod.context.new(
                 raise SystemExit()
 
             if isinstance(event, tcod.event.KeyDown):
+
+                if game_state == "TITLE":
+                    if event.sym == tcod.event.KeySym.RETURN:
+                        game_state = "STORY"
                 
                 if event.sym == tcod.event.KeySym.I:
                     previous_state = game_state
                     game_state = "INVENTORY"
                     continue
-                
-                if game_state == "GALAXY":
 
-                    if event.sym == tcod.event.KeySym.UP:
-                        player_y -= 1
-
-                    elif event.sym == tcod.event.KeySym.DOWN:
-                        player_y += 1
-
-                    elif event.sym == tcod.event.KeySym.LEFT:
-                        player_x -= 1
-
-                    elif event.sym == tcod.event.KeySym.RIGHT:
-                        player_x += 1
-
+                elif game_state == "STORY":
+                    if event.sym == tcod.event.KeySym.SPACE:
+                        story_char_index = len(story_text)
                     elif event.sym == tcod.event.KeySym.RETURN:
-                        if current_star:
-                            current_system = current_star.system
-
-                            system_player_x = WIDTH // 2
-                            system_player_y = HEIGHT // 2
-
+                        if story_char_index >= len(story_text):
+                            current_star = stars[0]
+                            current_system = stars[0].system
                             game_state = "SYSTEM"
+                
+                elif game_state == "GALAXY":
+
+                    if event.sym == tcod.event.KeySym.M:
+                        game_state = "SYSTEM"
 
                 elif game_state == "SYSTEM":
 
@@ -542,8 +641,9 @@ with tcod.context.new(
                     elif event.sym == tcod.event.KeySym.RIGHT:
                         system_player_x += 1
 
-                    elif event.sym == tcod.event.KeySym.ESCAPE:
+                    elif event.sym == tcod.event.KeySym.M:
                         game_state = "GALAXY"
+                        
 
                     elif event.sym == tcod.event.KeySym.RETURN:
 
@@ -578,9 +678,7 @@ with tcod.context.new(
                         previous_state = game_state
                         game_state = "MARKET"
 
-                elif game_state == "STORY":
-                    game_state = "GALAXY"
-                    continue
+                
 
                 elif game_state == "MARKET":
                     if event.sym == tcod.event.KeySym.ESCAPE:
@@ -611,3 +709,5 @@ with tcod.context.new(
                 elif game_state == "INVENTORY":
                     if event.sym == tcod.event.KeySym.ESCAPE:
                         game_state = previous_state
+
+                

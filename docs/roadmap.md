@@ -19,4 +19,4 @@
 
 # Milestone 6
 
-- [X] Added Story
+- [X] First Story
