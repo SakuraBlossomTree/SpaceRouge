@@ -11,8 +11,12 @@
 
 # Milestone 3
 
-- [ ] Enter Star Systems
+- [X] Enter Star Systems
 
 # Milestone 4
 
 - [ ] Trading
+
+# Milestone 6
+
+- [X] Added Story
