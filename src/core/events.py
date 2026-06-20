@@ -17,6 +17,14 @@ def handle_event(event, story_text):
         state.game_state = "INVENTORY"
         return
 
+    if event.sym == tcod.event.KeySym.P and state.game_state != "TITLE":
+        state.previous_state = state.game_state
+        state.game_state = "MESSAGES"
+        return
+
+    if event.sym == tcod.event.KeySym.Q:
+        raise SystemExit()
+        
     handler = HANDLERS.get(state.game_state)
     if handler:
         handler(event, story_text)
@@ -67,6 +75,12 @@ def _jumppoint(event, story_text):
 
     elif event.sym == tcod.event.KeySym.RETURN:
 
+        if state.credits < state.current_object.cost:
+            state.add_message("Not enough credits.")
+            return
+        
+        state.credits -= state.current_object.cost
+
         origin_system = state.current_system.name
 
         destination = state.current_object.destination
@@ -88,6 +102,8 @@ def _jumppoint(event, story_text):
                         break
 
                 state.game_state = "SYSTEM"
+
+                state.add_message(f"You jumped to {destination} System")
 
                 break
 
@@ -138,6 +154,10 @@ def _inventory(event, story_text):
         state.game_state = state.previous_state
 
 
+def _message(event, story_text):
+    if event.sym == tcod.event.KeySym.ESCAPE:
+        state.game_state = state.previous_state
+
 HANDLERS = {
     "TITLE": _title,
     "STORY": _story,
@@ -148,4 +168,5 @@ HANDLERS = {
     "LOCATION": _location,
     "MARKET": _market,
     "INVENTORY": _inventory,
+    "MESSAGES": _message,
 }

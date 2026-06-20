@@ -41,12 +41,13 @@ class Station:
 
 
 class JumpPoint:
-    def __init__(self, x, y, name, source, destination):
+    def __init__(self, x, y, name, source, destination, cost):
         self.x = x
         self.y = y
         self.name = name
         self.source = source
         self.destination = destination
+        self.cost = cost
 
 
 class Item:

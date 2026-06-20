@@ -12,7 +12,7 @@ from core import state
 from core.events import handle_event
 from core.world import generate_stars, WIDTH, HEIGHT
 from render import title, story, galaxy, system as system_render, jumppoint
-from render import planet, location, market, inventory
+from render import planet, location, market, inventory, messages
 
 
 def load_text(path):
@@ -76,6 +76,9 @@ def main():
 
             elif state.game_state == "INVENTORY":
                 inventory.draw(console, WIDTH)
+            
+            elif state.game_state == "MESSAGES":
+                messages.draw(console, WIDTH, HEIGHT)
 
             context.present(console)
 

@@ -43,13 +43,13 @@
 
 ### Sector Map Improvements
 - [X] Add colors for planets, stations, and player
-- [ ] Add jump gates
-- [ ] Add labels for nearby objects
-- [ ] Add travel costs
-- [ ] Add travel messages
+- [X] Add jump gates
+- [X] Add labels for nearby objects
+- [X] Add travel costs (still need to work on this)
+- [X] Add travel messages
 
 ### UI Improvements
-- [ ] Persistent message log
+- [X] Persistent message log
 - [ ] Credits display
 - [ ] Cargo display
 - [ ] Better inventory screen

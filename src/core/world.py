@@ -78,7 +78,8 @@ def create_sol_system():
             20,
             system.name + " jump point",
             system.name,
-            "Vega"
+            "Vega",
+            10,
         )
     )
 
@@ -116,7 +117,8 @@ def create_vega_system():
             50,
             system.name + " jump point",
             system.name,
-            "Sol"
+            "Sol",
+            10,
         )
     )
 
