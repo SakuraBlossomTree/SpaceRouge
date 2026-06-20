@@ -2,11 +2,12 @@
 
 
 class Star:
-    def __init__(self, x, y, name):
+    def __init__(self, x, y, name, type):
         self.x = x
         self.y = y
         self.name = name
         self.system = StarSystem(name)
+        self.type = type
 
 
 class StarSystem:
@@ -18,7 +19,7 @@ class StarSystem:
 
 
 class Planet:
-    def __init__(self, x, y, name, govement, seed, market=None):
+    def __init__(self, x, y, name, govement, seed, color, market=None):
         self.x = x
         self.y = y
         self.name = name
@@ -26,6 +27,7 @@ class Planet:
         self.seed = seed
         self.hub_map = None
         self.market = market or {}
+        self.color = color
 
 
 class Station:
@@ -39,10 +41,10 @@ class Station:
 
 
 class JumpPoint:
-    def __init__(self, x, y, source, destination):
+    def __init__(self, x, y, name, source, destination):
         self.x = x
         self.y = y
-        self.name = "Jump Station"
+        self.name = name
         self.source = source
         self.destination = destination
 

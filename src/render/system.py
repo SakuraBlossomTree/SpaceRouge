@@ -16,7 +16,7 @@ def draw(console, width, height, system):
     )
 
     for planet in system.planets:
-        console.print(planet.x, planet.y, "P")
+        console.print(planet.x, planet.y, "P", fg=planet.color)
 
         if state.system_player_x == planet.x and state.system_player_y == planet.y:
             state.current_object = planet
@@ -30,7 +30,13 @@ def draw(console, width, height, system):
         if state.system_player_x == station.x and state.system_player_y == station.y:
             state.current_object = station
 
-    console.print(state.system_player_x, state.system_player_y, "@")
+    for jumppoint in system.jump_points:
+        console.print(jumppoint.x, jumppoint.y, "J", fg=(255, 255, 255))
+
+        if state.system_player_x == jumppoint.x and state.system_player_y == jumppoint.y:
+            state.current_object = jumppoint
+
+    console.print(state.system_player_x, state.system_player_y, "@", fg=(255, 255, 255))
 
     if state.current_object:
         console.print(1, height - 2, f"Object: {state.current_object.name}")

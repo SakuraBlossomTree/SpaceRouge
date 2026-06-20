@@ -2,19 +2,36 @@
 
 import random
 
-from core.entities import Star, StarSystem, Planet, Station
+from core.entities import Star, StarSystem, Planet, Station, JumpPoint
 
 WIDTH = 80
 HEIGHT = 60
 
 STAR_NAMES = [
     "Sol",
-    "Alpha Centauri",
-    "Sirius",
+    # "Alpha Centauri",
+    # "Sirius",
     "Vega",
-    "Altair",
-    "Polaris",
+    # "Altair",
+    # "Polaris",
 ]
+
+STAR_TYPES = {
+    "Red Dwarf": {
+        "color": (255, 0, 0)
+    },
+
+    "Blue Dwarf": {
+        "color": (0, 0, 255)
+    },
+
+    "White Dwarf": {
+        "color": (255, 255, 255)
+    },
+    "Yellow Dwarf": {
+        "color": (255, 255, 0)
+    }
+}
 
 
 def create_sol_system():
@@ -28,6 +45,7 @@ def create_sol_system():
             "Earth",
             "United Nations",
             12345,
+            (0, 0, 255),
             {"Food": 2},
         )
     )
@@ -39,6 +57,7 @@ def create_sol_system():
             "Mars",
             "United Nations",
             67890,
+            (255, 0, 0),
             {"Food": 1},
         )
     )
@@ -50,6 +69,54 @@ def create_sol_system():
             "Earth Orbital",
             "United Nations",
             {"Food": 2},
+        )
+    )
+
+    system.jump_points.append(
+        JumpPoint(
+            35,
+            20,
+            system.name + " jump point",
+            system.name,
+            "Vega"
+        )
+    )
+
+    return system
+
+def create_vega_system():
+
+    system = StarSystem("Vega")
+
+    system.planets.append(
+        Planet(
+            20,
+            20,
+            "New Horizon",
+            "Independent",
+            11111,
+            (0, 0, 255),
+            {"Food": 4}
+        )
+    )
+
+    system.stations.append(
+        Station(
+            25,
+            15,
+            "Vega Prime",
+            "Independent",
+            {"Food": 3}
+        )
+    )
+
+    system.jump_points.append(
+        JumpPoint(
+            50,
+            50,
+            system.name + " jump point",
+            system.name,
+            "Sol"
         )
     )
 
@@ -66,12 +133,18 @@ def generate_stars():
                 random.randint(0, WIDTH - 1),
                 random.randint(0, HEIGHT - 1),
                 STAR_NAMES[i],
+                random.choice(list(STAR_TYPES.keys()))
             )
         )
 
     for star in stars:
+
         if star.name == "Sol":
+            star.type = "Yellow Dwarf"
             star.system = create_sol_system()
+
+        elif star.name == "Vega":
+            star.system = create_vega_system()
 
     return stars
 

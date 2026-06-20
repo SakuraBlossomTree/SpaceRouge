@@ -42,7 +42,7 @@
 ## Immediate Goals
 
 ### Sector Map Improvements
-- [ ] Add colors for planets, stations, and player
+- [X] Add colors for planets, stations, and player
 - [ ] Add jump gates
 - [ ] Add labels for nearby objects
 - [ ] Add travel costs

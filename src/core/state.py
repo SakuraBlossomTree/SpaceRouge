@@ -26,6 +26,8 @@ planet_player_y = 25
 
 # --- Current context ---------------------------------------------------------
 
+stars = []
+
 current_star = None
 current_system = None
 current_object = None

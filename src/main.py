@@ -11,7 +11,7 @@ import tcod
 from core import state
 from core.events import handle_event
 from core.world import generate_stars, WIDTH, HEIGHT
-from render import title, story, galaxy, system as system_render
+from render import title, story, galaxy, system as system_render, jumppoint
 from render import planet, location, market, inventory
 
 
@@ -26,7 +26,8 @@ def main():
     story_text = load_text("story.txt")
     title_text = load_text("title.txt")
 
-    stars = generate_stars()
+    state.stars = generate_stars()
+    stars = state.stars
 
     tileset = tcod.tileset.load_tilesheet(
         "Haberdash_curses_12x12.png", 16, 16, tcod.tileset.CHARMAP_CP437
@@ -61,6 +62,9 @@ def main():
             elif state.game_state == "SYSTEM":
                 system_render.draw(console, WIDTH, HEIGHT, state.current_system)
 
+            elif state.game_state == "JUMPPOINT":
+                jumppoint.draw(console, WIDTH, HEIGHT)
+
             elif state.game_state == "PLANET":
                 planet.draw(console)
 
@@ -90,8 +94,14 @@ def main():
                     and state.story_char_index >= len(story_text)
                     and state.current_star is None
                 ):
-                    state.current_star = stars[0]
-                    state.current_system = stars[0].system
+                    for star in stars:
+
+                        if star.name == "Sol":
+
+                            state.current_star = star
+                            state.current_system = star.system
+
+                            break
 
                 handle_event(event, story_text)
 

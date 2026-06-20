@@ -52,10 +52,44 @@ def _system(event, story_text):
     elif event.sym == tcod.event.KeySym.M:
         state.game_state = "GALAXY"
     elif event.sym == tcod.event.KeySym.RETURN:
-        if state.current_object:
+        if not state.current_object:
+            return
+        if hasattr(state.current_object, "destination"):
+            state.game_state = "JUMPPOINT"
+        else:
             state.current_location = state.current_object
             state.game_state = "LOCATION"
 
+def _jumppoint(event, story_text):
+
+    if event.sym == tcod.event.KeySym.ESCAPE:
+        state.game_state = "SYSTEM"
+
+    elif event.sym == tcod.event.KeySym.RETURN:
+
+        origin_system = state.current_system.name
+
+        destination = state.current_object.destination
+
+        for star in state.stars:
+
+            if star.name == destination:
+
+                state.current_star = star
+                state.current_system = star.system
+
+                for jumppoint in state.current_system.jump_points:
+
+                    if jumppoint.destination == origin_system:
+
+                        state.system_player_x = jumppoint.x
+                        state.system_player_y = jumppoint.y
+
+                        break
+
+                state.game_state = "SYSTEM"
+
+                break
 
 def _planet(event, story_text):
     if event.sym == tcod.event.KeySym.UP:
@@ -68,7 +102,6 @@ def _planet(event, story_text):
         state.planet_player_x += 1
     elif event.sym == tcod.event.KeySym.ESCAPE:
         state.game_state = "SYSTEM"
-
 
 def _location(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
@@ -110,6 +143,7 @@ HANDLERS = {
     "STORY": _story,
     "GALAXY": _galaxy,
     "SYSTEM": _system,
+    "JUMPPOINT": _jumppoint,
     "PLANET": _planet,
     "LOCATION": _location,
     "MARKET": _market,
