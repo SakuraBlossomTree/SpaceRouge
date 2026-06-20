@@ -1,10 +1,14 @@
 """Keyboard input handling, one function per game_state screen."""
 
 import tcod
+import time
+import random
 
-from core import state
+from core import state, audio
 from core.entities import FOOD
 
+
+# state.hyperspace_delay = random.uniform(0.2, 1)
 
 def handle_event(event, story_text):
     """Dispatch a KeyDown event to the right handler based on game_state."""
@@ -23,6 +27,7 @@ def handle_event(event, story_text):
         return
 
     if event.sym == tcod.event.KeySym.Q:
+        audio.device.stop()
         raise SystemExit()
         
     handler = HANDLERS.get(state.game_state)
@@ -78,34 +83,20 @@ def _jumppoint(event, story_text):
         if state.credits < state.current_object.cost:
             state.add_message("Not enough credits.")
             return
-        
+
         state.credits -= state.current_object.cost
 
-        origin_system = state.current_system.name
+        state.pending_destination = (state.current_object.destination)
 
-        destination = state.current_object.destination
+        state.pending_origin = (state.current_system.name)
 
-        for star in state.stars:
+        state.hyperspace_stage = 0
+        state.hyperspace_complete = False
+        state.hyperspace_timer = time.time()
 
-            if star.name == destination:
+        audio.play("sfx/Reverse-Time-Loop-isaiah658.ogg")
 
-                state.current_star = star
-                state.current_system = star.system
-
-                for jumppoint in state.current_system.jump_points:
-
-                    if jumppoint.destination == origin_system:
-
-                        state.system_player_x = jumppoint.x
-                        state.system_player_y = jumppoint.y
-
-                        break
-
-                state.game_state = "SYSTEM"
-
-                state.add_message(f"You jumped to {destination} System")
-
-                break
+        state.game_state = "HYPERSPACE"
 
 def _planet(event, story_text):
     if event.sym == tcod.event.KeySym.UP:
@@ -157,6 +148,59 @@ def _inventory(event, story_text):
 def _message(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
         state.game_state = state.previous_state
+    
+def update_hyperspace():
+    
+    if not state.hyperspace_complete and time.time() - state.hyperspace_timer > 0.5:
+
+        state.hyperspace_timer = time.time()
+        state.hyperspace_stage += 1
+
+    if state.hyperspace_stage >= 10 and not state.hyperspace_complete:
+
+        state.hyperspace_complete = True
+        state.hyperspace_complete_timer = time.time()
+
+        audio.play(
+            "sfx/NenadSimic - Muffled Distant Explosion.wav"
+        )
+
+    if state.hyperspace_complete:
+
+        if time.time() - state.hyperspace_complete_timer > 1.0:
+
+            destination = state.pending_destination
+            origin_system = state.pending_origin
+
+            for star in state.stars:
+
+                if star.name == destination:
+
+                    state.current_star = star
+                    state.current_system = star.system
+
+                    for jumppoint in state.current_system.jump_points:
+
+                        if jumppoint.destination == origin_system:
+
+                            state.system_player_x = jumppoint.x
+                            state.system_player_y = jumppoint.y
+
+                            break
+
+                    state.add_message(
+                        f"You jumped to {destination} System"
+                    )
+
+                    state.pending_destination = None
+                    state.pending_origin = None
+
+                    state.hyperspace_complete = False
+                    state.hyperspace_stage = 0
+
+                    state.game_state = "SYSTEM"
+
+                    break
 
 HANDLERS = {
     "TITLE": _title,

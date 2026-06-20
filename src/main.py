@@ -9,9 +9,9 @@ import time
 import tcod
 
 from core import state
-from core.events import handle_event
+from core.events import handle_event, update_hyperspace
 from core.world import generate_stars, WIDTH, HEIGHT
-from render import title, story, galaxy, system as system_render, jumppoint
+from render import title, story, galaxy, system as system_render, jumppoint, hyperspace
 from render import planet, location, market, inventory, messages
 
 
@@ -64,6 +64,10 @@ def main():
 
             elif state.game_state == "JUMPPOINT":
                 jumppoint.draw(console, WIDTH, HEIGHT)
+
+            elif state.game_state == "HYPERSPACE":
+                update_hyperspace()
+                hyperspace.draw(console, WIDTH, HEIGHT)
 
             elif state.game_state == "PLANET":
                 planet.draw(console)

@@ -9,11 +9,11 @@ HEIGHT = 60
 
 STAR_NAMES = [
     "Sol",
-    # "Alpha Centauri",
-    # "Sirius",
+    "Alpha Centauri",
+    "Sirius",
     "Vega",
-    # "Altair",
-    # "Polaris",
+    "Altair",
+    "Polaris",
 ]
 
 STAR_TYPES = {
@@ -31,6 +31,33 @@ STAR_TYPES = {
     "Yellow Dwarf": {
         "color": (255, 255, 0)
     }
+}
+
+STAR_FRAMES = {
+    "Red Dwarf": [
+        ".",
+        "*"
+    ],
+
+    "Yellow Dwarf": [
+        "*",
+        "o",
+        "O",
+        "o"
+    ],
+
+    "Blue Dwarf": [
+        ".",
+        "-",
+        "*",
+        "-"
+    ],
+
+    "White Dwarf": [
+        "*",
+        "O",
+        "*"
+    ]
 }
 
 

@@ -33,6 +33,13 @@ current_system = None
 current_object = None
 current_location = None
 current_planet = None
+pending_destination = None
+pending_origin = None
+
+hyperspace_stage = 0
+hyperspace_timer = 0.0
+hyperspace_complete = False
+hyperspace_complete_timer = 0.0
 
 # --- Economy ------------------------------------------------------------------
 

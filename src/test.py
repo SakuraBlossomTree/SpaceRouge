@@ -1,21 +1,27 @@
-import random
+import miniaudio
+import time
 
-STAR_TYPES = {
-    "Red Dwarf": {
-        "color": (255, 100, 100)
-    },
+device = miniaudio.PlaybackDevice()
+device.__enter__()
 
-    "Blue Dwarf": {
-        "color": (100, 100, 255)
-    },
+info = miniaudio.get_file_info("sfx/Reverse-Time-Loop-isaiah658.ogg")
 
-    "White Dwarf": {
-        "color": (255, 255, 255)
-    }
-}
+stream = miniaudio.stream_file(
+    "sfx/Reverse-Time-Loop-isaiah658.ogg"
+)
 
-star_type = random.choice(list(STAR_TYPES.keys()))
+device.start(stream)
 
-star_color = STAR_TYPES[star_type]["color"]
+time.sleep(info.duration)
 
-print(star_type, star_color)
+info = miniaudio.get_file_info("sfx/NenadSimic - Muffled Distant Explosion.wav")
+
+stream = miniaudio.stream_file(
+    "sfx/NenadSimic - Muffled Distant Explosion.wav"
+)
+
+device.start(stream)
+
+time.sleep(info.duration)
+
+device.__exit__(None, None, None)
