@@ -63,7 +63,7 @@
 - [ ] Re-enable galaxy map
 - [ ] Current system highlighted
 - [ ] Jump between systems
-- [ ] Hyperspace travel screen
+- [X] Hyperspace travel screen
 - [ ] Travel time
 
 ### Galaxy Generation
@@ -174,7 +174,7 @@
 ### Presentation
 - [ ] Better ASCII art
 - [ ] Animated effects
-- [ ] Sound effects
+- [X] Sound effects (Basic framework)
 - [ ] Music
 
 ---
