@@ -8,7 +8,6 @@ from effects.effects import twinkle_color
 from core.world import STAR_TYPES, STAR_FRAMES
 
 def draw(console, width, height, stars):
-    console.print(width - 15, height - 1, f"Credits: {state.credits}")
 
     center_x = width // 2
     center_y = height // 2

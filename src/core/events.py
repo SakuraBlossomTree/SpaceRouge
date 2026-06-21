@@ -10,7 +10,7 @@ from core.entities import FOOD
 
 # state.hyperspace_delay = random.uniform(0.2, 1)
 
-def handle_event(event, story_text):
+def handle_event(event, story_text, context):
     """Dispatch a KeyDown event to the right handler based on game_state."""
     if not isinstance(event, tcod.event.KeyDown):
         return
@@ -29,6 +29,14 @@ def handle_event(event, story_text):
     if event.sym == tcod.event.KeySym.Q:
         audio.device.stop()
         raise SystemExit()
+    
+    if event.sym == tcod.event.KeySym.F11:
+        window = context.sdl_window
+
+        if window.fullscreen:
+            window.fullscreen = False
+        else:
+            window.fullscreen = True
         
     handler = HANDLERS.get(state.game_state)
     if handler:

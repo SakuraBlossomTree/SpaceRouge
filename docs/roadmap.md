@@ -175,7 +175,7 @@
 - [ ] Better ASCII art
 - [ ] Animated effects
 - [X] Sound effects (Basic framework)
-- [ ] Music
+- [X] Music (Basic music working but we need to add a new music thread for it which is going to take some time)
 
 ---
 

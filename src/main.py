@@ -8,10 +8,10 @@ import time
 
 import tcod
 
-from core import state
+from core import state, audio
 from core.events import handle_event, update_hyperspace
 from core.world import generate_stars, WIDTH, HEIGHT
-from render import title, story, galaxy, system as system_render, jumppoint, hyperspace
+from render import title, story, galaxy, system as system_render, jumppoint, hyperspace, hud
 from render import planet, location, market, inventory, messages
 
 
@@ -25,6 +25,8 @@ def main():
 
     story_text = load_text("story.txt")
     title_text = load_text("title.txt")
+
+    audio.play("sfx/MyVeryOwnDeadShip.ogg")
 
     state.stars = generate_stars()
     stars = state.stars
@@ -54,6 +56,7 @@ def main():
 
             elif state.game_state == "STORY":
                 story.update(story_text)
+                audio.device.stop()
                 story.draw(console, HEIGHT, story_text)
 
             elif state.game_state == "GALAXY":
@@ -84,7 +87,9 @@ def main():
             elif state.game_state == "MESSAGES":
                 messages.draw(console, WIDTH, HEIGHT)
 
-            context.present(console)
+            hud.draw(console, WIDTH, HEIGHT)
+
+            context.present(console, keep_aspect=True)
 
             # --- Events ----------------------------------------------------
 
@@ -110,7 +115,7 @@ def main():
 
                             break
 
-                handle_event(event, story_text)
+                handle_event(event, story_text, context)
 
 
 if __name__ == "__main__":
