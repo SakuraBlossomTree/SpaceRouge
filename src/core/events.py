@@ -170,7 +170,7 @@ def update_hyperspace():
         state.hyperspace_complete_timer = time.time()
 
         audio.play(
-            "sfx/NenadSimic - Muffled Distant Explosion.wav"
+            "sfx/NenadSimic - Muffled Distant Explosion.ogg"
         )
 
     if state.hyperspace_complete:
