@@ -50,9 +50,9 @@
 
 ### UI Improvements
 - [X] Persistent message log
-- [ ] Credits display
-- [ ] Cargo display
-- [ ] Better inventory screen
+- [X] Credits display
+- [X] Cargo display
+- [X] Better inventory screen (may change this later on)
 - [ ] Better market screen
 
 ---
