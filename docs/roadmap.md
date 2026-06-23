@@ -93,9 +93,9 @@
 ## Missions
 
 ### Basic Missions
-- [ ] Delivery missions
+- [X] Delivery missions
 - [ ] Passenger transport
-- [ ] Cargo contracts
+- [X] Cargo contracts
 
 ### Advanced Missions
 - [ ] Smuggling

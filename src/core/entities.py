@@ -69,4 +69,7 @@ class Inventory:
 
 
 # Shared item instances
-FOOD = Item("Food", 2)
+ITEMS = {
+    "Food": Item("Food", 2),
+    "Medical Supplies": Item("Medical Supplies", 3),
+}

@@ -4,8 +4,8 @@ import tcod
 import time
 import random
 
-from core import state, audio
-from core.entities import FOOD
+from core import state, audio, entities
+from core.entities import ITEMS
 
 
 # state.hyperspace_delay = random.uniform(0.2, 1)
@@ -142,10 +142,11 @@ def _market(event, story_text):
 
     elif event.sym == tcod.event.KeySym.N1:
         food_price = state.current_location.market["Food"]
+        item = ITEMS["Food"]
 
-        if state.credits >= food_price and state.inventory.free_space() >= FOOD.size:
+        if state.credits >= food_price and state.inventory.free_space() >= item.size:
             state.credits -= food_price
-            state.inventory.items.append(FOOD)
+            state.inventory.items.append(item)
             state.add_message("Bought Food")
 
     elif event.sym == tcod.event.KeySym.N2:
@@ -163,19 +164,44 @@ def _missions(event, story_text):
         state.game_state = state.previous_state
 
     elif event.sym == tcod.event.KeySym.UP:
-        state.selected_mission_index = (state.selected_mission_index - 1) % len(state.missions)
-    
+        state.selected_mission_index = (state.selected_mission_index - 1) % len(state.visible_missions)
+
     elif event.sym == tcod.event.KeySym.DOWN:
-        state.selected_mission_index = (state.selected_mission_index + 1) % len(state.missions)
+        state.selected_mission_index = (state.selected_mission_index + 1) % len(state.visible_missions)
     
     elif event.sym == tcod.event.KeySym.RETURN:
         mission = state.visible_missions[state.selected_mission_index]
 
         if mission.status == "available":
+            if mission.mission_type == "cargo":
+                item = entities.ITEMS[mission.cargo]
+                space_needed = item.size * mission.amount
+
+                if state.inventory.free_space() < space_needed:
+                    state.add_message("Not enough cargo space for this mission.")
+                    return
+
+                for _ in range(mission.amount):
+                    state.inventory.items.append(item)
+
             mission.status = "active"
             state.add_message(f"Mission accepted: {mission.title}")
 
-        elif mission.status == "active" and mission.destination == state.current_location.name:
+        elif mission.status == "active" and state.current_location and mission.destination == state.current_location.name:
+            if mission.mission_type == "cargo":
+                item = entities.ITEMS[mission.cargo]
+                carried = sum(1 for i in state.inventory.items if i.name == item.name)
+
+                if carried < mission.amount:
+                    state.add_message("You don't have the required cargo anymore.")
+                    return
+
+                removed = 0
+                for cargo_item in list(state.inventory.items):
+                    if cargo_item.name == item.name and removed < mission.amount:
+                        state.inventory.items.remove(cargo_item)
+                        removed += 1
+
             state.credits += mission.reward_credits
             for item_name in mission.reward_items:
                 state.add_message(f"Received item: {item_name}")

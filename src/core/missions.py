@@ -4,9 +4,10 @@ import json
 from pathlib import Path
 
 class Mission:
-    def __init__(self, id , title, description, reward_credits, reward_items, status, source, destination, difficulty):
+    def __init__(self, id , title, description, mission_type, reward_credits, reward_items, status, source, destination, difficulty,cargo=None, amount=None):
         self.id = id
         self.title = title
+        self.mission_type = mission_type
         self.description = description
         self.reward_credits = reward_credits
         self.reward_items = reward_items
@@ -14,6 +15,8 @@ class Mission:
         self.source = source
         self.destination = destination
         self.difficulty = difficulty
+        self.cargo = cargo
+        self.amount = amount
 
         @property
         def is_selectable(self):
@@ -26,17 +29,7 @@ def load_mission(path="missions.json"):
 
     missions = []
     for entry in raw["missions"]:
-        mission = Mission(
-            id=entry["id"],
-            title=entry["title"],
-            description=entry["description"],
-            reward_credits=entry["reward_credits"],
-            reward_items=entry["reward_items"],
-            status=entry["status"],
-            source=entry["source"],
-            destination=entry["destination"],
-            difficulty=entry["difficulty"],
-        )
+        mission = Mission(**entry)
         missions.append(mission)
-
+        
     return missions
