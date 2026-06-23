@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 
 class Mission:
-    def __init__(self, id , title, description, reward_credits, reward_items, status, destination, difficulty):
+    def __init__(self, id , title, description, reward_credits, reward_items, status, source, destination, difficulty):
         self.id = id
         self.title = title
         self.description = description
         self.reward_credits = reward_credits
         self.reward_items = reward_items
         self.status = status
+        self.source = source
         self.destination = destination
         self.difficulty = difficulty
 
@@ -32,6 +33,7 @@ def load_mission(path="missions.json"):
             reward_credits=entry["reward_credits"],
             reward_items=entry["reward_items"],
             status=entry["status"],
+            source=entry["source"],
             destination=entry["destination"],
             difficulty=entry["difficulty"],
         )

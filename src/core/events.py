@@ -128,6 +128,13 @@ def _location(event, story_text):
         state.previous_state = state.game_state
         state.game_state = "MISSIONS"
 
+        state.visible_missions = [
+            mission for mission in state.missions
+            if mission.source == state.current_location.name
+        ]
+
+        state.selected_mission_index = 0
+
 
 def _market(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
@@ -162,7 +169,7 @@ def _missions(event, story_text):
         state.selected_mission_index = (state.selected_mission_index + 1) % len(state.missions)
     
     elif event.sym == tcod.event.KeySym.RETURN:
-        mission = state.missions[state.selected_mission_index]
+        mission = state.visible_missions[state.selected_mission_index]
 
         if mission.status == "available":
             mission.status = "active"

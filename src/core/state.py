@@ -50,6 +50,7 @@ inventory = Inventory(20)
 # --- Missions -------------------------------------------------------------------
 
 missions = load_mission()
+visible_missions = []
 selected_mission_index = 0
 
 # --- Messages -----------------------------------------------------------------

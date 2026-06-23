@@ -7,6 +7,7 @@
       "reward_credits": 150,
       "reward_items": [],
       "status": "available",
+      "source": "Earth",
       "destination": "New Horizon",
       "difficulty": 1
     },
@@ -17,6 +18,7 @@
       "reward_credits": 300,
       "reward_items": [],
       "status": "available",
+      "source": "Mars",
       "destination": "Vega Prime",
       "difficulty": 3
     }

@@ -7,7 +7,7 @@ def draw(console, width):
     console.print(width // 2 - 4, 2, "MISSIONS BOARD")
 
     y = 5
-    for index, mission in enumerate(state.missions):
+    for index, mission in enumerate(state.visible_missions):
         if index == state.selected_mission_index:
             prefix = "> "
         else:
