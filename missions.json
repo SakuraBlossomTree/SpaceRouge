@@ -1,0 +1,24 @@
+{
+  "missions": [
+    {
+      "id": "M001",
+      "title": "Basic Transportation",
+      "description": "Just some basic transportation should be done should be easier said then done",
+      "reward_credits": 150,
+      "reward_items": [],
+      "status": "available",
+      "destination": "New Horizon",
+      "difficulty": 1
+    },
+    {
+      "id": "M002",
+      "title": "Pirate Hideout",
+      "description": "Intelligence suggests pirates are stockpiling weapons nearby.",
+      "reward_credits": 300,
+      "reward_items": [],
+      "status": "available",
+      "destination": "Vega Prime",
+      "difficulty": 3
+    }
+  ]
+}

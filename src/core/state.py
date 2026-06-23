@@ -7,6 +7,7 @@ classes.
 """
 
 from core.entities import Inventory
+from core.missions import load_mission
 
 # --- Meta / flow control ----------------------------------------------------
 
@@ -45,6 +46,11 @@ hyperspace_complete_timer = 0.0
 
 credits = 100
 inventory = Inventory(20)
+
+# --- Missions -------------------------------------------------------------------
+
+missions = load_mission()
+selected_mission_index = 0
 
 # --- Messages -----------------------------------------------------------------
 

@@ -124,6 +124,9 @@ def _location(event, story_text):
     elif event.sym == tcod.event.KeySym.N1:
         state.previous_state = state.game_state
         state.game_state = "MARKET"
+    elif event.sym == tcod.event.KeySym.N3:
+        state.previous_state = state.game_state
+        state.game_state = "MISSIONS"
 
 
 def _market(event, story_text):
@@ -147,6 +150,34 @@ def _market(event, story_text):
                 state.add_message("Sold food")
                 break
 
+
+def _missions(event, story_text):
+    if event.sym == tcod.event.KeySym.ESCAPE:
+        state.game_state = state.previous_state
+
+    elif event.sym == tcod.event.KeySym.UP:
+        state.selected_mission_index = (state.selected_mission_index - 1) % len(state.missions)
+    
+    elif event.sym == tcod.event.KeySym.DOWN:
+        state.selected_mission_index = (state.selected_mission_index + 1) % len(state.missions)
+    
+    elif event.sym == tcod.event.KeySym.RETURN:
+        mission = state.missions[state.selected_mission_index]
+
+        if mission.status == "available":
+            mission.status = "active"
+            state.add_message(f"Mission accepted: {mission.title}")
+
+        elif mission.status == "active" and mission.destination == state.current_location.name:
+            state.credits += mission.reward_credits
+            for item_name in mission.reward_items:
+                state.add_message(f"Received item: {item_name}")
+
+            mission.status = "completed"
+            state.add_message(f"Mission complete: {mission.title} (+{mission.reward_credits} credits)")
+
+        else:
+            state.add_message("This mission isn't available.")
 
 def _inventory(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
@@ -219,6 +250,7 @@ HANDLERS = {
     "PLANET": _planet,
     "LOCATION": _location,
     "MARKET": _market,
+    "MISSIONS": _missions,
     "INVENTORY": _inventory,
     "MESSAGES": _message,
 }

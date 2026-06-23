@@ -12,7 +12,7 @@ def draw(console, width):
 
     console.print(10, 10, "[1] Trading Post")
     console.print(10, 11, "[2] Shipyard")
-    console.print(10, 12, "[3] Exchange")
+    console.print(10, 12, "[3] Missions Board")
     console.print(10, 13, "[4] Bar")
 
     console.print(10, 15, "ESC - Leave")
