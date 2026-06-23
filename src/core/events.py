@@ -131,6 +131,7 @@ def _location(event, story_text):
         state.visible_missions = [
             mission for mission in state.missions
             if mission.source == state.current_location.name
+            or (mission.status == "active" and mission.destination == state.current_location.name)
         ]
 
         state.selected_mission_index = 0
