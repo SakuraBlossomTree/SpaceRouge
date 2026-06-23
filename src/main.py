@@ -12,7 +12,7 @@ from core import state, audio
 from core.events import handle_event, update_hyperspace
 from core.world import generate_stars, WIDTH, HEIGHT
 from render import title, story, galaxy, system as system_render, jumppoint, hyperspace, hud
-from render import planet, location, market, inventory, messages, missions
+from render import planet, location, market, inventory, messages, missions, mission_log
 
 
 def load_text(path):
@@ -86,6 +86,9 @@ def main():
             
             elif state.game_state == "MESSAGES":
                 messages.draw(console, WIDTH, HEIGHT)
+
+            elif state.game_state == "MISSION_LOG":
+                mission_log.draw(console, WIDTH)
 
             elif state.game_state == "MISSIONS":
                 missions.draw(console, WIDTH)

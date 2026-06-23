@@ -21,9 +21,14 @@ def handle_event(event, story_text, context):
         state.game_state = "INVENTORY"
         return
 
-    if event.sym == tcod.event.KeySym.P and state.game_state != "TITLE":
+    if event.sym == tcod.event.KeySym.L and state.game_state != "TITLE":
         state.previous_state = state.game_state
         state.game_state = "MESSAGES"
+        return
+    
+    if event.sym == tcod.event.KeySym.P and state.game_state != "TITLE":
+        state.previous_state = state.game_state
+        state.game_state = "MISSION_LOG"
         return
 
     if event.sym == tcod.event.KeySym.Q:
@@ -165,12 +170,17 @@ def _missions(event, story_text):
         state.game_state = state.previous_state
 
     elif event.sym == tcod.event.KeySym.UP:
-        state.selected_mission_index = (state.selected_mission_index - 1) % len(state.visible_missions)
+        if state.visible_missions:
+            state.selected_mission_index = (state.selected_mission_index - 1) % len(state.visible_missions)
 
     elif event.sym == tcod.event.KeySym.DOWN:
-        state.selected_mission_index = (state.selected_mission_index + 1) % len(state.visible_missions)
-    
+        if state.visible_missions:
+            state.selected_mission_index = (state.selected_mission_index + 1) % len(state.visible_missions)
+
     elif event.sym == tcod.event.KeySym.RETURN:
+        if not state.visible_missions:
+            return
+
         mission = state.visible_missions[state.selected_mission_index]
 
         if mission.status == "available":
@@ -219,6 +229,10 @@ def _inventory(event, story_text):
 
 
 def _message(event, story_text):
+    if event.sym == tcod.event.KeySym.ESCAPE:
+        state.game_state = state.previous_state
+
+def _m_log(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
         state.game_state = state.previous_state
     
@@ -287,4 +301,5 @@ HANDLERS = {
     "MISSIONS": _missions,
     "INVENTORY": _inventory,
     "MESSAGES": _message,
+    "MISSION_LOG": _m_log,
 }
