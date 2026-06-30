@@ -26,7 +26,7 @@ def main():
     story_text = load_text("story.txt")
     title_text = load_text("title.txt")
 
-    audio.play("sfx/MyVeryOwnDeadShip.ogg")
+    # audio.play("sfx\Mirror Lake.ogg")
 
     state.stars = generate_stars()
     stars = state.stars
@@ -34,6 +34,16 @@ def main():
     tileset = tcod.tileset.load_tilesheet(
         "Haberdash_curses_12x12.png", 16, 16, tcod.tileset.CHARMAP_CP437
     )
+
+    if state.DEBUG:
+        for star in stars:
+            if star.name == "Sol":
+                state.current_star = star
+                state.current_system = star.system
+                state.current_planet = star.system.planets[0]
+                state.current_location = star.system.planets[0]
+                break
+        state.game_state = state.DEBUG_SCREEN
 
     state.last_story_time = time.time()
     last_frame_time = time.time()

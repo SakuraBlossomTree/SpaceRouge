@@ -68,3 +68,6 @@ def add_message(text):
 
 story_char_index = 0
 last_story_time = 0.0
+
+DEBUG = False
+DEBUG_SCREEN = "MARKET"

@@ -1,6 +1,5 @@
 """Core game object classes: stars, systems, planets, stations, items."""
 
-
 class Star:
     def __init__(self, x, y, name, type):
         self.x = x

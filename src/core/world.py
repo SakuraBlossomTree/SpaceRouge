@@ -3,6 +3,7 @@
 import random
 
 from core.entities import Star, StarSystem, Planet, Station, JumpPoint
+from core.seedgen import SeedSequence, generate_food_price
 
 WIDTH = 80
 HEIGHT = 60
@@ -73,7 +74,7 @@ def create_sol_system():
             "United Nations",
             12345,
             (0, 0, 255),
-            {"Food": 2},
+            {"Food": generate_food_price()},
         )
     )
 
@@ -85,7 +86,7 @@ def create_sol_system():
             "United Nations",
             67890,
             (255, 0, 0),
-            {"Food": 1},
+            {"Food": generate_food_price(SeedSequence(67890))},
         )
     )
 
