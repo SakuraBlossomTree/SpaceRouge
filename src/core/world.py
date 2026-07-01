@@ -405,31 +405,55 @@ def generate_system(name, master_seed):
  
 def _wire_jump_points(stars, master_seq):
     """
-    Randomly wire jump points between stars.
-    Each star gets 1-3 outgoing connections to random other stars.
-    Jump points are placed at random free positions in each system.
+    Wire jump points based on proximity.
+    Each star connects to its 1-2 nearest neighbors, two-way.
     """
     star_map = {star.name: star for star in stars}
- 
-    for star in stars:
-        system = star.system
-        used = _used_positions(system)
- 
-        num_jumps = 1 + master_seq.next_seed() % 3  # 1-3 jump points
- 
-        # Pick random destinations (no self-loops, no duplicates)
-        existing_dests = {jp.destination for jp in system.jump_points}
-        candidates = [s.name for s in stars if s.name != star.name and s.name not in existing_dests]
-        master_seq.step()  # advance before slicing
-        random.shuffle(candidates)
-        destinations = candidates[:num_jumps]
- 
-        for dest in destinations:
-            x, y = _free_pos(master_seq, used)
-            cost = 10 + master_seq.next_seed() % 41  # 10-50 credits
-            system.jump_points.append(
-                JumpPoint(x, y, f"{star.name} -> {dest}", star.name, dest, cost)
-            )
+
+    # Sort all pairs by distance
+    pairs = []
+    for i, a in enumerate(stars):
+        for j, b in enumerate(stars):
+            if j <= i:
+                continue
+            dist = ((a.x - b.x) ** 2 + (a.y - b.y) ** 2) ** 0.5
+            pairs.append((dist, a.name, b.name))
+
+    pairs.sort(key=lambda p: p[0])
+
+    # Track how many connections each star has
+    connection_count = {star.name: 0 for star in stars}
+    max_connections = 3
+
+    for dist, a_name, b_name in pairs:
+        # Skip if both stars already have max connections
+        if connection_count[a_name] >= max_connections and connection_count[b_name] >= max_connections:
+            continue
+
+        # Skip if already connected
+        a_star = star_map[a_name]
+        b_star = star_map[b_name]
+        existing = {jp.destination for jp in a_star.system.jump_points}
+        if b_name in existing:
+            continue
+
+        # Add A -> B
+        used_a = _used_positions(a_star.system)
+        x, y = _free_pos(master_seq, used_a)
+        cost = 10 + master_seq.next_seed() % 41
+        a_star.system.jump_points.append(
+            JumpPoint(x, y, f"{a_name} -> {b_name}", a_name, b_name, cost)
+        )
+
+        # Add B -> A (return)
+        used_b = _used_positions(b_star.system)
+        rx, ry = _free_pos(master_seq, used_b)
+        b_star.system.jump_points.append(
+            JumpPoint(rx, ry, f"{b_name} -> {a_name}", b_name, a_name, cost)
+        )
+
+        connection_count[a_name] += 1
+        connection_count[b_name] += 1
 
 # --- Main entry point --------------------------------------------------------
  

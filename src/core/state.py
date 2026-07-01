@@ -72,7 +72,7 @@ last_story_time = 0.0
 
 # DEBUG menu interface so that I can quickly check what I am implementing
 DEBUG = False
-DEBUG_SCREEN = "MARKET"
+DEBUG_SCREEN = "GALAXY"
 
 # Look mode to inspect stuff that you will not go to
 look_mode = False

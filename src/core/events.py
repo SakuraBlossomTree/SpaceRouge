@@ -7,9 +7,6 @@ import random
 from core import state, audio, entities
 from core.entities import ITEMS
 
-
-# state.hyperspace_delay = random.uniform(0.2, 1)
-
 LOOK_SCREENS = ("SYSTEM", "GALAXY")
 
 def handle_event(event, story_text, context):
@@ -298,7 +295,7 @@ def _message(event, story_text):
 
 def _m_log(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
-        state.game_state = state.previous_state
+        state.game_state = "SYSTEM"
     
 def update_hyperspace():
     
