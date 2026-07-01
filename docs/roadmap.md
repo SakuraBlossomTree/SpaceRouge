@@ -62,13 +62,13 @@
 ### Navigation
 - [ ] Re-enable galaxy map
 - [ ] Current system highlighted
-- [ ] Jump between systems
+- [X] Jump between systems
 - [X] Hyperspace travel screen
 - [ ] Travel time
 
 ### Galaxy Generation
-- [ ] Generate star systems
-- [ ] Generate factions
+- [X] Generate star systems
+- [X] Generate factions
 - [ ] Generate trade routes
 
 ---
