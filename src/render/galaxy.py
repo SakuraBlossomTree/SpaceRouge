@@ -3,11 +3,13 @@
 import time
 import math
 
-from core import state
+from core import state, look
 from effects.effects import twinkle_color
 from core.world import STAR_TYPES, STAR_FRAMES
 
 def draw(console, width, height, stars):
+
+    look_object = None
 
     center_x = width // 2
     center_y = height // 2
@@ -34,8 +36,12 @@ def draw(console, width, height, stars):
 
         if state.player_x == star.x and state.player_y == star.y:
             state.current_star = star
+        look_object = look.check(star, look_object)
 
     if state.current_star:
         console.print(state.current_star.x, state.current_star.y, "@", fg=(255, 255, 255))
 
         console.print(1, height - 1, f"System: {state.current_star.name}")
+
+    if state.look_mode:
+        look.draw_result(console, height, look_object)

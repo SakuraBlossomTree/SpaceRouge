@@ -69,5 +69,12 @@ def add_message(text):
 story_char_index = 0
 last_story_time = 0.0
 
+
+# DEBUG menu interface so that I can quickly check what I am implementing
 DEBUG = False
 DEBUG_SCREEN = "MARKET"
+
+# Look mode to inspect stuff that you will not go to
+look_mode = False
+look_x = 0
+look_y = 0

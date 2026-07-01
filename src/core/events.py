@@ -10,6 +10,8 @@ from core.entities import ITEMS
 
 # state.hyperspace_delay = random.uniform(0.2, 1)
 
+LOOK_SCREENS = ("SYSTEM", "GALAXY")
+
 def handle_event(event, story_text, context):
     """Dispatch a KeyDown event to the right handler based on game_state."""
     if not isinstance(event, tcod.event.KeyDown):
@@ -42,6 +44,30 @@ def handle_event(event, story_text, context):
             window.fullscreen = False
         else:
             window.fullscreen = True
+
+    if event.sym == tcod.event.KeySym.X and state.game_state in LOOK_SCREENS:
+        state.look_mode = not state.look_mode
+        if state.look_mode:
+            if state.game_state == "SYSTEM":
+                state.look_x = state.system_player_x
+                state.look_y = state.system_player_y
+            elif state.game_state == "GALAXY":
+                state.look_x = state.player_x
+                state.look_y = state.player_y
+        return
+    
+    if state.look_mode and state.game_state in LOOK_SCREENS:
+        if event.sym == tcod.event.KeySym.UP:
+            state.look_y -= 1
+        elif event.sym == tcod.event.KeySym.DOWN:
+            state.look_y += 1
+        elif event.sym == tcod.event.KeySym.LEFT:
+            state.look_x -= 1
+        elif event.sym == tcod.event.KeySym.RIGHT:
+            state.look_x += 1
+        elif event.sym == tcod.event.KeySym.ESCAPE:
+            state.look_mode = False
+        return
         
     handler = HANDLERS.get(state.game_state)
     if handler:
