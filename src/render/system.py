@@ -16,6 +16,9 @@ def draw(console, width, height, system):
         system.name,
     )
 
+    console.print(1, 2, f"[{system.archetype}]")
+    console.print(1, 3, system.description)
+
     for planet in system.planets:
         console.print(planet.x, planet.y, "P", fg=planet.color)
 

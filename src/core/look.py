@@ -1,6 +1,5 @@
 """Shared look-mode rendering helper."""
 
-import time
 from core import state
 
 def check(obj, look_object):
@@ -13,16 +12,14 @@ def draw(console, height):
     """Draw the look cursor and description line."""
     if not state.look_mode:
         return
-    if int(time.time() * 2) % 2 == 0:
-        console.print(state.look_x, state.look_y, "X", fg=(255, 255, 0))
+    console.print(state.look_x, state.look_y, "X", fg=(255, 255, 0))
     # filled in by caller via return value of check()
 
 def draw_result(console, height, look_object):
     """Draw cursor glyph and description. Call after all objects are checked."""
     if not state.look_mode:
         return
-    if int(time.time() * 2) % 2 == 0:
-        console.print(state.look_x, state.look_y, "X", fg=(255, 255, 0))
+    console.print(state.look_x, state.look_y, "X", fg=(255, 255, 0))
     if look_object:
         console.print(1, height - 2, f"Looking at: {look_object.name}")
     else:

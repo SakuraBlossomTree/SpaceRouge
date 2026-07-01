@@ -8,6 +8,97 @@ from core.seedgen import SeedSequence, generate_food_price
 WIDTH = 80
 HEIGHT = 60
 
+COMMODITIES = [
+    "Food",
+    "Water",
+    "Ore",
+    "Rare Minerals",
+    "Machinery",
+    "Medicine",
+    "Electronics",
+    "Luxury Goods",
+]
+
+# Base price for each commodity before archetype modifiers
+BASE_PRICES = {
+    "Food":          10,
+    "Water":         8,
+    "Ore":           15,
+    "Rare Minerals": 40,
+    "Machinery":     30,
+    "Medicine":      25,
+    "Electronics":   35,
+    "Luxury Goods":  50,
+}
+
+# --- Archetypes --------------------------------------------------------------
+# exports  → produced here, sold cheap (0.6x base price)
+# imports  → needed here, bought expensive (1.5x base price)
+# neutral  → available at base price
+# Military systems have no market at all
+ 
+ARCHETYPES = {
+    "Agricultural": {
+        "description": "Vast farmlands and food processing facilities.",
+        "exports":  ["Food", "Water"],
+        "imports":  ["Machinery", "Electronics"],
+        "planets":  (2, 3),   # min, max planets
+        "stations": (0, 2),
+        "station_type": "Market",
+    },
+    "Mining": {
+        "description": "Rich asteroid belts and deep-core extraction operations.",
+        "exports":  ["Ore", "Rare Minerals"],
+        "imports":  ["Food", "Machinery"],
+        "planets":  (1, 2),
+        "stations": (1, 2),
+        "station_type": "Depot",
+    },
+    "Industrial": {
+        "description": "Heavy manufacturing and shipbuilding complexes.",
+        "exports":  ["Machinery", "Electronics"],
+        "imports":  ["Ore", "Food"],
+        "planets":  (1, 2),
+        "stations": (1, 3),
+        "station_type": "Hub",
+    },
+    "Trade Hub": {
+        "description": "A bustling center of commerce connecting nearby systems.",
+        "exports":  [],
+        "imports":  [],
+        "planets":  (1, 2),
+        "stations": (2, 3),
+        "station_type": "Hub",
+    },
+    "Research": {
+        "description": "Cutting-edge laboratories and experimental facilities.",
+        "exports":  ["Electronics", "Medicine"],
+        "imports":  ["Food", "Rare Minerals"],
+        "planets":  (1, 2),
+        "stations": (1, 2),
+        "station_type": "Outpost",
+    },
+    "Frontier": {
+        "description": "A remote and underdeveloped system on the edge of known space.",
+        "exports":  [],
+        "imports":  ["Food", "Medicine", "Machinery"],
+        "planets":  (1, 3),
+        "stations": (0, 1),
+        "station_type": "Outpost",
+    },
+    "Military": {
+        "description": "A heavily fortified system with restricted civilian access.",
+        "exports":  [],
+        "imports":  [],
+        "planets":  (1, 2),
+        "stations": (1, 2),
+        "station_type": "Outpost",
+        "no_market": True,
+    },
+}
+ 
+ARCHETYPE_NAMES = list(ARCHETYPES.keys())
+
 STAR_NAME_PREFIXES = [
     "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta",
     "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho",
@@ -105,6 +196,41 @@ SYS_W = 70
 SYS_H = 50
 SYS_MARGIN = 5
 
+# --- Economy -----------------------------------------------------------------
+ 
+def _generate_market(archetype_name, seq):
+    """
+    Generate a market dict for a planet or station based on archetype.
+    Exported goods are cheap, imported goods are expensive,
+    neutral goods are at base price. Military systems return None.
+    """
+    archetype = ARCHETYPES[archetype_name]
+ 
+    if archetype.get("no_market"):
+        return None
+ 
+    market = {}
+ 
+    for commodity in COMMODITIES:
+        base = BASE_PRICES[commodity]
+ 
+        if commodity in archetype["exports"]:
+            # Produced here — sell cheap, with small random variation
+            variation = (seq.next_seed() % 5) - 2   # -2 to +2
+            market[commodity] = max(1, int(base * 0.6) + variation)
+ 
+        elif commodity in archetype["imports"]:
+            # Needed here — buy expensive
+            variation = (seq.next_seed() % 7) - 3   # -3 to +3
+            market[commodity] = int(base * 1.5) + variation
+ 
+        else:
+            # Neutral — base price with small variation
+            variation = (seq.next_seed() % 5) - 2
+            market[commodity] = max(1, base + variation)
+ 
+    return market
+
 # --- Name generation ---------------------------------------------------------
  
 def _gen_star_name(seq, used_names):
@@ -137,6 +263,11 @@ def _gen_station_name(system_name, seq):
 def create_sol_system():
     ''' Sol Solar system generation'''
     system = StarSystem("Sol")
+    system.archetype = "Trade Hub"
+    system.description = "Humanity's birthplace and the heart of interstellar trade."
+
+    e_market = _generate_market("Trade Hub", SeedSequence(12345))
+    m_market = _generate_market("Trade Hub", SeedSequence(67890))
 
     system.planets.append(
         Planet(
@@ -146,7 +277,7 @@ def create_sol_system():
             "United Nations",
             12345,
             (0, 0, 255),
-            {"Food": generate_food_price()},
+            e_market,
         )
     )
 
@@ -158,7 +289,7 @@ def create_sol_system():
             "United Nations",
             67890,
             (255, 0, 0),
-            {"Food": generate_food_price(SeedSequence(67890))},
+            m_market,
         )
     )
 
@@ -168,7 +299,7 @@ def create_sol_system():
             15,
             "Earth Orbital",
             "United Nations",
-            {"Food": generate_food_price()},
+            e_market,
         )
     )
 
@@ -188,6 +319,10 @@ def create_sol_system():
 def create_vega_system():
 
     system = StarSystem("Vega")
+    system.archetype = "Frontier"
+    system.description = "A remote system on the edge of explored space."
+
+    market = _generate_market("Frontier", SeedSequence(11111))
 
     system.planets.append(
         Planet(
@@ -197,7 +332,7 @@ def create_vega_system():
             "Independent",
             11111,
             (0, 0, 255),
-            {"Food": generate_food_price()}
+            market
         )
     )
 
@@ -207,7 +342,7 @@ def create_vega_system():
             15,
             "Vega Prime",
             "Independent",
-            {"Food": generate_food_price()}
+            market
         )
     )
 
@@ -253,13 +388,22 @@ def _free_pos(seq, used):
 def generate_system(name, master_seed):
     """Procedurally generate a full star system from a seed."""
     seq = SeedSequence(master_seed)
+    
+    archetype_name = ARCHETYPE_NAMES[seq.next_seed() % len(ARCHETYPE_NAMES)]
+    archetype = ARCHETYPES[archetype_name]
+
     system = StarSystem(name)
+    system.archetype = archetype_name
+    system.description = archetype["description"]
     used = _used_positions(system)
  
-    num_planets  = 1 + seq.next_seed() % 3   # 1-3
-    num_stations = seq.next_seed() % 3        # 0-2
+    # Planet and station counts come from archetype ranges
+    p_min, p_max = archetype["planets"]
+    s_min, s_max = archetype["stations"]
+    num_planets  = p_min + seq.next_seed() % (p_max - p_min + 1)
+    num_stations = s_min + seq.next_seed() % (s_max - s_min + 1)
  
-    for i in range(num_planets):
+    for _ in range(num_planets):
         x, y = _free_pos(seq, used)
         planet_name = _gen_planet_name(seq)
         faction = FACTIONS[seq.next_seed() % len(FACTIONS)]
@@ -271,7 +415,7 @@ def generate_system(name, master_seed):
                    {"Food": food_price})
         )
  
-    for i in range(num_stations):
+    for _ in range(num_stations):
         x, y = _free_pos(seq, used)
         station_name = _gen_station_name(name, seq)
         faction = FACTIONS[seq.next_seed() % len(FACTIONS)]

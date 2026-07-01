@@ -12,6 +12,8 @@ class Star:
 class StarSystem:
     def __init__(self, name):
         self.name = name
+        self.archetype = "Unknown"
+        self.description = ""
         self.planets = []
         self.stations = []
         self.jump_points = []
