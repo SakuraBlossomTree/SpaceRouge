@@ -93,14 +93,36 @@ def _galaxy(event, story_text):
 
 
 def _system(event, story_text):
+    moved = False
+
     if event.sym == tcod.event.KeySym.UP:
         state.system_player_y -= 1
+        moved = True
     elif event.sym == tcod.event.KeySym.DOWN:
         state.system_player_y += 1
+        moved = True
     elif event.sym == tcod.event.KeySym.LEFT:
         state.system_player_x -= 1
+        moved = True
     elif event.sym == tcod.event.KeySym.RIGHT:
         state.system_player_x += 1
+        moved = True
+
+    if moved:
+        if state.fuel <= 0:
+            state.add_message("No fuel!")
+            # undo the move
+            if event.sym == tcod.event.KeySym.UP:
+                state.system_player_y += 1
+            elif event.sym == tcod.event.KeySym.DOWN:
+                state.system_player_y -= 1
+            elif event.sym == tcod.event.KeySym.LEFT:
+                state.system_player_x += 1
+            elif event.sym == tcod.event.KeySym.RIGHT:
+                state.system_player_x -= 1
+        else:
+            state.fuel -= 1
+
     elif event.sym == tcod.event.KeySym.M:
         state.game_state = "GALAXY"
     elif event.sym == tcod.event.KeySym.RETURN:
@@ -122,6 +144,12 @@ def _jumppoint(event, story_text):
         if state.credits < state.current_object.cost:
             state.add_message("Not enough credits.")
             return
+
+        if state.fuel < 20:
+            state.add_message("Not enough fuel to jump!")
+            return
+
+        state.fuel -= 20
 
         state.credits -= state.current_object.cost
 
@@ -189,6 +217,16 @@ def _market(event, story_text):
                 state.credits += food_price
                 state.add_message("Sold food")
                 break
+
+    elif event.sym == tcod.event.KeySym.N3:
+        fuel_needed = state.max_fuel - state.fuel
+        cost = fuel_needed * 2
+        if state.credits >= cost:
+            state.credits -= cost
+            state.fuel = state.max_fuel
+            state.add_message(f"Refueled for {cost} credits")
+        else:
+            state.add_message("Not enough credits for refuel")
 
 
 def _missions(event, story_text):

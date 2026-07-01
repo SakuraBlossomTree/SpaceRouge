@@ -158,33 +158,6 @@ STAR_TYPES = {
     }
 }
 
-STAR_FRAMES = {
-    "Red Dwarf": [
-        ".",
-        "*"
-    ],
-
-    "Yellow Dwarf": [
-        "*",
-        "o",
-        "O",
-        "o"
-    ],
-
-    "Blue Dwarf": [
-        ".",
-        "-",
-        "*",
-        "-"
-    ],
-
-    "White Dwarf": [
-        "*",
-        "O",
-        "*"
-    ]
-}
-
 # Reserved names that get hand-built systems
 RESERVED = {"Sol", "Vega"}
 

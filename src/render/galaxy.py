@@ -5,7 +5,7 @@ import math
 
 from core import state, look
 from effects.effects import twinkle_color
-from core.world import STAR_TYPES, STAR_FRAMES
+from core.world import STAR_TYPES
 
 def draw(console, width, height, stars):
 
@@ -19,11 +19,9 @@ def draw(console, width, height, stars):
     t = time.time()
 
     for i, star in enumerate(stars):
-        frames = STAR_FRAMES[star.type]
-        frame = frames[int(time.time() * 4 + i) % len(frames)]
         base_color = STAR_TYPES[star.type]["color"]
         color = twinkle_color(base_color, t, speed=5.0, phase=i * 1.3)
-        console.print(star.x, star.y, frame, fg=color)
+        console.print(star.x, star.y, "*", fg=color)
 
         # dx = star.x - center_x
         # dy = star.y - center_y

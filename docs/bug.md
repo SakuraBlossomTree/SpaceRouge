@@ -1,0 +1,1 @@
+if the mission log screen is on you can go to the messages screen and exit and you can't exit the mission screen

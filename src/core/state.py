@@ -78,3 +78,7 @@ DEBUG_SCREEN = "MARKET"
 look_mode = False
 look_x = 0
 look_y = 0
+
+# We need fuel to make the player miserable 
+fuel = 100
+max_fuel = 100

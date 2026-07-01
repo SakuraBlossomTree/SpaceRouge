@@ -10,3 +10,6 @@ def draw(console, width, height):
             height - 1,
             f"Credits: {state.credits}"
         )
+
+        fuel_text = f"Fuel: {state.fuel}/{state.max_fuel}"
+        console.print(width - len(fuel_text) - 3, height - 3, fuel_text)

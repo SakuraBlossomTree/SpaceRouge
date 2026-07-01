@@ -5,15 +5,19 @@ loop: update -> draw -> present -> handle events.
 """
 
 import time
-
 import tcod
+import random
 
+from pathlib import Path
 from core import state, audio
 from core.events import handle_event, update_hyperspace
 from core.world import generate_stars, WIDTH, HEIGHT
 from render import title, story, galaxy, system as system_render, jumppoint, hyperspace, hud
 from render import planet, location, market, inventory, messages, missions, mission_log
 
+MUSIC_PATH = Path("sfx/music")
+
+music_tracks = list(MUSIC_PATH.glob("*.ogg"))
 
 def load_text(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -26,7 +30,9 @@ def main():
     story_text = load_text("story.txt")
     title_text = load_text("title.txt")
 
-    # audio.play("sfx\Mirror Lake.ogg")
+    track = random.choice(music_tracks)
+
+    audio.play(track)
 
     state.stars = generate_stars()
     stars = state.stars
