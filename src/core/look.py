@@ -16,12 +16,29 @@ def draw(console, height):
     # filled in by caller via return value of check()
 
 def draw_result(console, height, look_object):
-    """Draw cursor glyph and description. Call after all objects are checked."""
     if not state.look_mode:
         return
+
     console.print(state.look_x, state.look_y, "X", fg=(255, 255, 0))
-    if look_object:
-        console.print(1, height - 2, f"Looking at: {look_object.name}")
-    else:
+
+    if look_object is None:
         console.print(1, height - 2, "Looking at: empty space")
-    console.print(1, height - 3, "X - Stop looking")
+
+    elif hasattr(look_object, "govement"):  # Planet
+        console.print(1, height - 4, f"Planet: {look_object.name}")
+        console.print(1, height - 3, f"Government: {look_object.govement}")
+        console.print(1, height - 2, f"Faction: {look_object.faction if hasattr(look_object, 'faction') else 'Unknown'}")
+
+    elif hasattr(look_object, "faction"):  # Station
+        console.print(1, height - 3, f"Station: {look_object.name}")
+        console.print(1, height - 2, f"Faction: {look_object.faction}")
+
+    elif hasattr(look_object, "destination"):  # JumpPoint
+        console.print(1, height - 3, f"Jump Point -> {look_object.destination}")
+        console.print(1, height - 2, f"Cost: {look_object.cost} credits")
+
+    elif hasattr(look_object, "system"):  # Star (galaxy screen)
+        console.print(1, height - 3, f"Star: {look_object.name}")
+        console.print(1, height - 2, f"[{look_object.system.archetype}]")
+
+    console.print(1, height - 5, "X - Stop looking")
