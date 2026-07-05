@@ -3,6 +3,8 @@ from __future__ import annotations
 import random
 
 from core import state
+from core.seedgen import SeedSequence
+
 class Mission:
     def __init__(self, id, title, description, mission_type, reward_credits,
                  reward_items, status, source, destination, difficulty,
@@ -142,7 +144,8 @@ def generate_missions(location, current_system, all_stars, count=4):
     all_stars      — full star list for picking destinations
     count          — how many missions to generate
     """
-    random.seed(hash(location.name + str(state.day // 7)))
+    seq = SeedSequence(state.galaxy_seed)
+
     archetype = getattr(current_system, "archetype", "Trade Hub")
     source_name = location.name
     missions = []
@@ -156,13 +159,14 @@ def generate_missions(location, current_system, all_stars, count=4):
     types   = list(weights.keys())
     w_vals  = list(weights.values())
 
-    for _ in range(count):
-        mission_type = random.choices(types, weights=w_vals, k=1)[0]
-        difficulty   = random.randint(1, 3)
+    for i in range(count):
+        # use seq instead of random
+        mission_type = types[seq.next_seed() % len(types)]  # no weights but consistent
+        difficulty = 1 + seq.next_seed() % 3
         r_min, r_max = REWARDS[difficulty]
-        reward       = random.randint(r_min, r_max)
+        reward = r_min + seq.next_seed() % (r_max - r_min)
 
-        dest_star    = random.choice(other_stars)
+        dest_star = other_stars[seq.next_seed() % len(other_stars)]
         dest_system  = dest_star.system
         dest_name    = (
             dest_system.planets[0].name if dest_system.planets

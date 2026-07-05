@@ -467,9 +467,9 @@ def _wire_jump_points(stars, master_seq):
 
 # --- Main entry point --------------------------------------------------------
  
-def generate_stars():
+def generate_stars(seed=None):
     """Generate the full galaxy of 30 stars with procedural systems."""
-    master_seq = SeedSequence()  # fixed galaxy seed — change to randomize
+    master_seq = SeedSequence(3739510349)  # fixed galaxy seed — change to randomize
  
     # Step 1: generate star names and positions
     used_names = set(RESERVED)
@@ -511,7 +511,7 @@ def generate_stars():
     # Step 3: wire jump points across all systems
     _wire_jump_points(stars, master_seq)
  
-    return stars
+    return stars, master_seq.seed
 
 
 def generate_planet(seed):

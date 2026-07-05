@@ -71,6 +71,12 @@ class Inventory:
 
 # Shared item instances
 ITEMS = {
-    "Food": Item("Food", 2),
-    "Medical Supplies": Item("Medical Supplies", 3),
+    "Food":          Item("Food", 2),
+    "Water":         Item("Water", 1),
+    "Ore":           Item("Ore", 3),
+    "Rare Minerals": Item("Rare Minerals", 2),
+    "Machinery":     Item("Machinery", 4),
+    "Medicine":      Item("Medicine", 2),
+    "Electronics":   Item("Electronics", 2),
+    "Luxury Goods":  Item("Luxury Goods", 1),
 }

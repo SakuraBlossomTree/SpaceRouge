@@ -43,7 +43,7 @@ hyperspace_complete_timer = 0.0
 
 # --- Economy ------------------------------------------------------------------
 
-credits = 100
+credits = 1000
 inventory = Inventory(20)
 
 # --- Missions -------------------------------------------------------------------
@@ -98,3 +98,5 @@ game_over_reason = ""
 # This tracks the story index
 story_index = 0
 story_texts = []
+
+galaxy_seed = 0

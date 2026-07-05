@@ -9,6 +9,7 @@ from core.entities import ITEMS
 from core.missions import generate_missions
 from core.debt import advance_day
 from core.world import FUEL_PRICES
+from core.save import save
 
 LOOK_SCREENS = ("SYSTEM", "GALAXY")
 
@@ -47,6 +48,12 @@ def handle_event(event, story_text, context):
 
     if event.sym == tcod.event.KeySym.D:
         state.day += 1
+
+    if event.sym == tcod.event.KeySym.M:
+        if state.game_state not in ("TITLE", "STORY", "HYPERSPACE", "GALAXY"):
+            state.previous_state = state.game_state
+            state.game_state = "GALAXY"
+            return
 
     if event.sym == tcod.event.KeySym.X and state.game_state in LOOK_SCREENS:
         state.look_mode = not state.look_mode
@@ -96,7 +103,7 @@ def _story(event, story_text):
 
 
 def _galaxy(event, story_text):
-    if event.sym == tcod.event.KeySym.M:
+    if event.sym == tcod.event.KeySym.ESCAPE or event.sym == tcod.event.KeySym.M:
         state.game_state = "SYSTEM"
 
 
@@ -139,8 +146,6 @@ def _system(event, story_text):
                 state.move_counter = 0
                 advance_day()
 
-    elif event.sym == tcod.event.KeySym.M:
-        state.game_state = "GALAXY"
     elif event.sym == tcod.event.KeySym.RETURN:
         if not state.current_object:
             return

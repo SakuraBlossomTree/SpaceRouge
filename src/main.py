@@ -12,6 +12,7 @@ from pathlib import Path
 from core import state, audio
 from core.events import handle_event, update_hyperspace
 from core.world import generate_stars, WIDTH, HEIGHT
+from core.save import save
 from render import title, story, galaxy, system as system_render, jumppoint, hyperspace, hud
 from render import planet, location, market, inventory, messages, missions, mission_log, gameover
 
@@ -37,8 +38,10 @@ def main():
 
     audio.play("sfx/music/MyVeryOwnDeadShip.ogg")
 
-    state.stars = generate_stars()
+    state.stars, galaxy_seed = generate_stars()
     stars = state.stars
+    state.galaxy_seed = galaxy_seed
+    save(galaxy_seed)
 
     tileset = tcod.tileset.load_tilesheet(
         "Haberdash_curses_12x12.png", 16, 16, tcod.tileset.CHARMAP_CP437
