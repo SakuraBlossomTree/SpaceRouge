@@ -3,11 +3,6 @@
 from core import state
 
 
-"""Render the MISSIONS screen."""
-
-from core import state
-
-
 def draw(console, width):
     console.print(width // 2 - 4, 2, "MISSIONS BOARD")
 
@@ -30,5 +25,6 @@ def draw(console, width):
     selected = state.visible_missions[state.selected_mission_index]
     console.print(4, y + 2, selected.description)
     console.print(4, y + 3, f"Reward: {selected.reward_credits} credits")
+    console.print(4, y + 4, f"Difficulty: {'*' * selected.difficulty}")
 
     console.print(width // 2 - 4, 20, "Press ESC to leave")

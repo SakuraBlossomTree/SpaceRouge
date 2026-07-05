@@ -158,6 +158,16 @@ STAR_TYPES = {
     }
 }
 
+FUEL_PRICES = {
+    "Agricultural":  3,
+    "Mining":        3,
+    "Industrial":    2,
+    "Trade Hub":     2,
+    "Research":      4,
+    "Frontier":      5,
+    "Military":      None,  # placeholder, no refueling for now
+}
+
 # Reserved names that get hand-built systems
 RESERVED = {"Sol", "Vega"}
 

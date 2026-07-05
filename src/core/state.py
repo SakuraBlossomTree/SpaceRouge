@@ -7,7 +7,6 @@ classes.
 """
 
 from core.entities import Inventory
-from core.missions import load_mission
 
 # --- Meta / flow control ----------------------------------------------------
 
@@ -49,7 +48,7 @@ inventory = Inventory(20)
 
 # --- Missions -------------------------------------------------------------------
 
-missions = load_mission()
+missions = []
 visible_missions = []
 selected_mission_index = 0
 
@@ -82,3 +81,11 @@ look_y = 0
 # We need fuel to make the player miserable 
 fuel = 100
 max_fuel = 100
+
+day = 1
+move_counter = 0
+
+debt = 250000
+weekly_payment = 5000
+missed_payments = 0
+next_payment_day = 8 # first payment due on day 8

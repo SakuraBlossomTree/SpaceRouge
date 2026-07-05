@@ -6,6 +6,9 @@ import random
 
 from core import state, audio, entities
 from core.entities import ITEMS
+from core.missions import generate_missions
+from core.debt import advance_day
+from core.world import FUEL_PRICES
 
 LOOK_SCREENS = ("SYSTEM", "GALAXY")
 
@@ -119,6 +122,12 @@ def _system(event, story_text):
                 state.system_player_x -= 1
         else:
             state.fuel -= 1
+            state.move_counter += 1
+
+            # Every 50 moves = 1 day
+            if state.move_counter >= 50:
+                state.move_counter = 0
+                advance_day()
 
     elif event.sym == tcod.event.KeySym.M:
         state.game_state = "GALAXY"
@@ -147,6 +156,8 @@ def _jumppoint(event, story_text):
             return
 
         state.fuel -= 20
+
+        advance_day()
 
         state.credits -= state.current_object.cost
 
@@ -184,13 +195,48 @@ def _location(event, story_text):
         state.previous_state = state.game_state
         state.game_state = "MISSIONS"
 
+        new_missions = generate_missions(
+            state.current_location,
+            state.current_system,
+            state.stars,
+            count=4,
+        )
+
+        existing_ids = {m.id for m in state.missions}
+        for m in new_missions:
+            if m.id not in existing_ids:
+                state.missions.append(m)
+
         state.visible_missions = [
-            mission for mission in state.missions
-            if mission.source == state.current_location.name
-            or (mission.status == "active" and mission.destination == state.current_location.name)
+            m for m in state.missions
+            if m.source == state.current_location.name
+            or (m.status == "active" and m.destination == state.current_location.name)
         ]
 
         state.selected_mission_index = 0
+    
+    elif event.sym == tcod.event.KeySym.N5:
+        archetype = state.current_system.archetype
+        price_per_unit = FUEL_PRICES.get(archetype)
+
+        if price_per_unit is None:
+            state.add_message("No civilian refueling available here.")
+            return
+        
+        fuel_needed = state.max_fuel - state.fuel
+        if fuel_needed == 0:
+            state.add_message("Fuel tank is already full.")
+            return
+        
+        cost = fuel_needed * price_per_unit
+
+        if state.credits < cost:
+            state.add_message(f"Not enough credits to refuel. Need {cost} credits.")
+            return
+        
+        state.credits -= cost
+        state.fuel = state.max_fuel
+        state.add_message(f"Refueled for {cost} credits ({price_per_unit}/unit).")
 
 
 def _market(event, story_text):
