@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 
-
+from core import state
 class Mission:
     def __init__(self, id, title, description, mission_type, reward_credits,
                  reward_items, status, source, destination, difficulty,
@@ -142,6 +142,7 @@ def generate_missions(location, current_system, all_stars, count=4):
     all_stars      — full star list for picking destinations
     count          — how many missions to generate
     """
+    random.seed(hash(location.name + str(state.day // 7)))
     archetype = getattr(current_system, "archetype", "Trade Hub")
     source_name = location.name
     missions = []

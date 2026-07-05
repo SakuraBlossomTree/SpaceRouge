@@ -45,6 +45,9 @@ def handle_event(event, story_text, context):
         else:
             window.fullscreen = True
 
+    if event.sym == tcod.event.KeySym.D:
+        state.day += 1
+
     if event.sym == tcod.event.KeySym.X and state.game_state in LOOK_SCREENS:
         state.look_mode = not state.look_mode
         if state.look_mode:
@@ -202,10 +205,11 @@ def _location(event, story_text):
             count=4,
         )
 
-        existing_ids = {m.id for m in state.missions}
-        for m in new_missions:
-            if m.id not in existing_ids:
-                state.missions.append(m)
+        # Remove old available missions, keep active ones
+        state.missions = [m for m in state.missions if m.status == "active"]
+
+        # Add fresh ones
+        state.missions.extend(new_missions)
 
         state.visible_missions = [
             m for m in state.missions
