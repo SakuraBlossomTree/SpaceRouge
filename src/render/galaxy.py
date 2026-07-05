@@ -59,9 +59,17 @@ def draw(console, width, height, stars):
                         y += sy
 
     for i, star in enumerate(stars):
+
+        # Skip drawing stars over the hud in the galaxy screen (Temparary fix)
+        
+        if star.x > width - 20 and star.y > height - 8:
+            continue
+
         base_color = STAR_TYPES[star.type]["color"]
         color = twinkle_color(base_color, t, speed=5.0, phase=i * 1.3)
         console.print(star.x, star.y, "*", fg=color)
+
+        """the commented code is for the movement of the stars, since we have implemented the advancement of day, we can later add star movement if we want in the game"""
 
         # dx = star.x - center_x
         # dy = star.y - center_y

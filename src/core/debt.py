@@ -38,11 +38,15 @@ def _process_payment():
         # Apply interest 
         interest = int(state.debt * INTREST_RATE)
         state.debt += interest
-        state.weekly_payment = int(state.weekly_payment * (1 - INTREST_RATE))
+        state.weekly_payment = int(state.weekly_payment * (1 + INTREST_RATE))
 
         msg = ESCALATION.get(state.missed_payments, ESCALATION[4])
         state.add_message(msg)
         state.add_message(f"Interest added: {interest} credits. Debt is now {state.debt}.")
+
+        if state.missed_payments >= 4:
+            state.game_over_reason = "Bounty hunters caught up with you. Your debt went unpaid."
+            state.game_state = "GAME_OVER"
 
     # Schedule next payment
     state.next_payment_day = state.day + 7

@@ -9,7 +9,7 @@ TEXT_WIDTH = 65
 TEXT_X = 6
 TEXT_Y = 8
 
-TYPE_SPEED = 0.03  # seconds per revealed character
+TYPE_SPEED = 0.05  # seconds per revealed character
 
 
 def in_text_zone(x, y):
@@ -28,10 +28,15 @@ def update(story_text):
 def draw(console, height, story_text):
 
     visible_text = story_text[: state.story_char_index]
-    wrapped_lines = textwrap.wrap(visible_text, width=TEXT_WIDTH)
+    wrapped_lines = []
+    for line in visible_text.split("\n"):
+        if line == "":
+            wrapped_lines.append("")
+        else:
+            wrapped_lines.extend(textwrap.wrap(line, width=TEXT_WIDTH))
 
     for i, line in enumerate(wrapped_lines):
-        console.print(TEXT_X, TEXT_Y + (i * 2), line)
+        console.print(TEXT_X, TEXT_Y + i, line)
 
     still_typing = state.story_char_index < len(story_text)
     cursor_blink_on = int(time.time() * 2) % 2
@@ -40,7 +45,7 @@ def draw(console, height, story_text):
         if wrapped_lines:
             console.print(
                 TEXT_X + len(wrapped_lines[-1]),
-                TEXT_Y + ((len(wrapped_lines) - 1) * 2),
+                TEXT_Y + (len(wrapped_lines) - 1),
                 "_",
             )
         else:

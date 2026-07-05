@@ -87,7 +87,12 @@ def _story(event, story_text):
         state.story_char_index = len(story_text)
     elif event.sym == tcod.event.KeySym.RETURN:
         if state.story_char_index >= len(story_text):
-            state.game_state = "SYSTEM"
+            state.story_index += 1
+            if state.story_index >= len(state.story_texts):
+                state.game_state = "SYSTEM"
+            else:
+                state.story_char_index = 0
+                state.last_story_time = 0
 
 
 def _galaxy(event, story_text):
@@ -123,6 +128,8 @@ def _system(event, story_text):
                 state.system_player_x += 1
             elif event.sym == tcod.event.KeySym.RIGHT:
                 state.system_player_x -= 1
+            state.game_over_reason = "You ran out of fuel and drifted into the void."
+            state.game_state = "GAME_OVER"
         else:
             state.fuel -= 1
             state.move_counter += 1
@@ -158,7 +165,7 @@ def _jumppoint(event, story_text):
             state.add_message("Not enough fuel to jump!")
             return
 
-        state.fuel -= 20
+        # state.fuel -= 20
 
         advance_day()
 
@@ -198,18 +205,18 @@ def _location(event, story_text):
         state.previous_state = state.game_state
         state.game_state = "MISSIONS"
 
-        new_missions = generate_missions(
-            state.current_location,
-            state.current_system,
-            state.stars,
-            count=4,
-        )
+        # Only generate if this location has no available missions yet
+        existing_sources = {m.source for m in state.missions if m.status == "available"}
 
-        # Remove old available missions, keep active ones
-        state.missions = [m for m in state.missions if m.status == "active"]
-
-        # Add fresh ones
-        state.missions.extend(new_missions)
+        if state.current_location.name not in existing_sources:
+            new_missions = generate_missions(
+                state.current_location,
+                state.current_system,
+                state.stars,
+                count=4,
+            )
+            state.missions = [m for m in state.missions if m.status == "active"]
+            state.missions.extend(new_missions)
 
         state.visible_missions = [
             m for m in state.missions

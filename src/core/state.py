@@ -82,10 +82,19 @@ look_y = 0
 fuel = 100
 max_fuel = 100
 
+# day counter for the player (this can be later changed to an actual calendar)
 day = 1
 move_counter = 0
 
+# this is debt mechanic if the player wants to win the game he has to remove the debt entirely
 debt = 250000
 weekly_payment = 5000
 missed_payments = 0
 next_payment_day = 8 # first payment due on day 8
+
+# this is the game over screen
+game_over_reason = ""
+
+# This tracks the story index
+story_index = 0
+story_texts = []

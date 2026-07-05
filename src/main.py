@@ -13,7 +13,7 @@ from core import state, audio
 from core.events import handle_event, update_hyperspace
 from core.world import generate_stars, WIDTH, HEIGHT
 from render import title, story, galaxy, system as system_render, jumppoint, hyperspace, hud
-from render import planet, location, market, inventory, messages, missions, mission_log
+from render import planet, location, market, inventory, messages, missions, mission_log, gameover
 
 MUSIC_PATH = Path("sfx/music")
 
@@ -27,12 +27,15 @@ def load_text(path):
 def main():
     console = tcod.console.Console(WIDTH, HEIGHT)
 
-    story_text = load_text("story.txt")
+    state.story_texts = [
+        load_text("story1.txt"),
+        load_text("story2.txt")
+    ]
     title_text = load_text("title.txt")
 
-    track = random.choice(music_tracks)
+    # track = random.choice(music_tracks)
 
-    audio.play(track)
+    audio.play("sfx/music/MyVeryOwnDeadShip.ogg")
 
     state.stars = generate_stars()
     stars = state.stars
@@ -64,6 +67,8 @@ def main():
 
         while True:
             console.clear()
+
+            story_text = state.story_texts[state.story_index] if state.story_index < len(state.story_texts) else ""
 
             # --- Per-state update + draw ---------------------------------
 
@@ -109,6 +114,9 @@ def main():
             elif state.game_state == "MISSIONS":
                 missions.draw(console, WIDTH)
 
+            elif state.game_state == "GAME_OVER":
+                gameover.draw(console, WIDTH, HEIGHT)
+
             hud.draw(console, WIDTH, HEIGHT)
 
             context.present(console, keep_aspect=True)
@@ -127,14 +135,12 @@ def main():
                     and event.sym == tcod.event.KeySym.RETURN
                     and state.story_char_index >= len(story_text)
                     and state.current_star is None
+                    and state.story_index >= len(state.story_texts) - 1  # only on last story
                 ):
                     for star in stars:
-
                         if star.name == "Sol":
-
                             state.current_star = star
                             state.current_system = star.system
-
                             break
 
                 handle_event(event, story_text, context)

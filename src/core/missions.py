@@ -181,7 +181,7 @@ def generate_missions(location, current_system, all_stars, count=4):
                 amount=amount,
                 commodity=commodity,
                 source=source_name,
-                destination=dest_name,
+                destination=f"{dest_name} ({dest_star.name} system)",
             )
             missions.append(Mission(
                 id=_next_id(),
@@ -194,7 +194,7 @@ def generate_missions(location, current_system, all_stars, count=4):
                 reward_items=[],
                 status="available",
                 source=source_name,
-                destination=dest_name,
+                destination=f"{dest_name} ({dest_star.name} system)",
                 difficulty=difficulty,
             ))
 
