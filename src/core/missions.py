@@ -8,7 +8,7 @@ from core.seedgen import SeedSequence
 class Mission:
     def __init__(self, id, title, description, mission_type, reward_credits,
                  reward_items, status, source, destination, difficulty,
-                 cargo=None, amount=None, systems_to_visit=None):
+                 cargo=None, amount=None, systems_to_visit=None, dest_system=None):
         self.id = id
         self.title = title
         self.mission_type = mission_type
@@ -18,6 +18,7 @@ class Mission:
         self.status = status
         self.source = source
         self.destination = destination
+        self.dest_system = dest_system
         self.difficulty = difficulty
         self.cargo = cargo
         self.amount = amount
@@ -144,7 +145,8 @@ def generate_missions(location, current_system, all_stars, count=4):
     all_stars      — full star list for picking destinations
     count          — how many missions to generate
     """
-    seq = SeedSequence(state.galaxy_seed)
+    seed = (state.galaxy_seed ^ hash(location.name + current_system.name)) % (2**32)
+    seq = SeedSequence(seed)
 
     archetype = getattr(current_system, "archetype", "Trade Hub")
     source_name = location.name
@@ -161,7 +163,8 @@ def generate_missions(location, current_system, all_stars, count=4):
 
     for i in range(count):
         # use seq instead of random
-        mission_type = types[seq.next_seed() % len(types)]  # no weights but consistent
+        # mission_type = types[seq.next_seed() % len(types)]  # no weights but consistent
+        mission_type = "cargo"
         difficulty = 1 + seq.next_seed() % 3
         r_min, r_max = REWARDS[difficulty]
         reward = r_min + seq.next_seed() % (r_max - r_min)
@@ -185,7 +188,8 @@ def generate_missions(location, current_system, all_stars, count=4):
                 amount=amount,
                 commodity=commodity,
                 source=source_name,
-                destination=f"{dest_name} ({dest_star.name} system)",
+                destination=dest_name,
+                dest_system=dest_star.name
             )
             missions.append(Mission(
                 id=_next_id(),
@@ -198,7 +202,8 @@ def generate_missions(location, current_system, all_stars, count=4):
                 reward_items=[],
                 status="available",
                 source=source_name,
-                destination=f"{dest_name} ({dest_star.name} system)",
+                destination=dest_name,
+                dest_system=dest_star.name,
                 difficulty=difficulty,
             ))
 

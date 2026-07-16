@@ -14,7 +14,7 @@ def draw(console, width):
 
     y = 5
     for mission in active:
-        console.print(4, y, f"{mission.title} -> {mission.destination}")
+        console.print(4, y, f"{mission.title} -> {mission.destination} ({mission.dest_system})")
         y += 1
 
     console.print(width // 2 - 4, 20, "Press ESC to leave")

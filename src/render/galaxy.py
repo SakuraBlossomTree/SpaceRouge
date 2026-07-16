@@ -58,6 +58,39 @@ def draw(console, width, height, stars):
                         err += dx
                         y += sy
 
+    # Draw jump connections from current system (may need to comment this code out if the game becomes to easy)
+    if state.current_system:
+        star_map = {star.name: star for star in stars}
+        
+        for jp in state.current_system.jump_points:
+            dest = star_map.get(jp.destination)
+            if not dest:
+                continue
+            
+            # Draw line from current star to destination
+            x0, y0 = state.current_star.x, state.current_star.y
+            x1, y1 = dest.x, dest.y
+            
+            # Bresenham line
+            dx = abs(x1 - x0)
+            dy = abs(y1 - y0)
+            sx = 1 if x0 < x1 else -1
+            sy = 1 if y0 < y1 else -1
+            err = dx - dy
+            x, y = x0, y0
+            while True:
+                if (x, y) != (x0, y0) and (x, y) != (x1, y1):
+                    console.print(x, y, ".", fg=(80, 80, 80))
+                if x == x1 and y == y1:
+                    break
+                e2 = err * 2
+                if e2 > -dy:
+                    err -= dy
+                    x += sx
+                if e2 < dx:
+                    err += dx
+                    y += sy
+
     for i, star in enumerate(stars):
 
         # Skip drawing stars over the hud in the galaxy screen (Temparary fix)

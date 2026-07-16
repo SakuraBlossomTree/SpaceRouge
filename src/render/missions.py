@@ -26,5 +26,8 @@ def draw(console, width):
     console.print(4, y + 2, selected.description)
     console.print(4, y + 3, f"Reward: {selected.reward_credits} credits")
     console.print(4, y + 4, f"Difficulty: {'*' * selected.difficulty}")
+    console.print(4, y + 5, f"Destination: {selected.destination}")
+    if hasattr(selected, 'dest_system') and selected.dest_system:
+        console.print(4, y + 6, f"System: {selected.dest_system}")
 
     console.print(width // 2 - 4, 20, "Press ESC to leave")

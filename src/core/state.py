@@ -88,9 +88,9 @@ move_counter = 0
 
 # this is debt mechanic if the player wants to win the game he has to remove the debt entirely
 debt = 250000
-weekly_payment = 5000
+weekly_payment = 1000
 missed_payments = 0
-next_payment_day = 8 # first payment due on day 8
+next_payment_day = 14 # first payment due on day 14
 
 # this is the game over screen
 game_over_reason = ""
@@ -100,3 +100,5 @@ story_index = 0
 story_texts = []
 
 galaxy_seed = 0
+
+mission_nav_target = None

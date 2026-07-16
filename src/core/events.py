@@ -166,9 +166,9 @@ def _jumppoint(event, story_text):
             state.add_message("Not enough credits.")
             return
 
-        if state.fuel < 20:
-            state.add_message("Not enough fuel to jump!")
-            return
+        # if state.fuel < 20:
+        #     state.add_message("Not enough fuel to jump!")
+        #     return
 
         # state.fuel -= 20
 
@@ -345,6 +345,25 @@ def _missions(event, story_text):
 
         else:
             state.add_message("This mission isn't available.")
+    
+    elif event.sym == tcod.event.KeySym.V:
+        if not state.visible_missions:
+            return
+        mission = state.visible_missions[state.selected_mission_index]
+        dest_system = getattr(mission, 'dest_system', None)
+        if not dest_system:
+            return
+        
+        # find the star and place look cursor on it
+        for star in state.stars:
+            if star.name == dest_system:
+                state.look_x = star.x
+                state.look_y = star.y
+                state.look_mode = True
+                state.mission_nav_target = dest_system
+                state.previous_state = state.game_state
+                state.game_state = "GALAXY"
+                break
 
 def _inventory(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
