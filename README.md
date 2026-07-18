@@ -19,6 +19,8 @@ Unlike traditional roguelikes that emphasize combat, SpaceRouge is designed arou
 
 ## Screenshots
 
+![gif preview](SpaceRouge.gif)
+
 ![Galaxy Map Screenshot](images/SpaceRouge.png)
 
 ## Gameplay
