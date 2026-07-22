@@ -7,6 +7,7 @@ classes.
 """
 
 from core.entities import Inventory
+from core.ships import PlayerShip
 
 # --- Meta / flow control ----------------------------------------------------
 
@@ -45,6 +46,14 @@ hyperspace_complete_timer = 0.0
 
 credits = 1000
 inventory = Inventory(20)
+
+player_ship = PlayerShip()
+
+# --- Combat -----------------------------------------------------------------
+
+current_combat = None       # CombatManager instance when in combat
+combat_selected_action = 0  # 0=Attack 1=Defend 2=Escape
+last_seen_by = None
 
 # --- Missions -------------------------------------------------------------------
 

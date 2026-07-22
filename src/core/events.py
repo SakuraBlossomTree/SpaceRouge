@@ -10,6 +10,7 @@ from core.missions import generate_missions
 from core.debt import advance_day
 from core.world import FUEL_PRICES
 from core.save import save
+from core.encounter import check_arrival, check_jump
 
 LOOK_SCREENS = ("SYSTEM", "GALAXY")
 
@@ -155,6 +156,13 @@ def _system(event, story_text):
             state.current_location = state.current_object
             state.game_state = "LOCATION"
 
+    elif event.sym == tcod.event.KeySym.F1:
+        from core.ships import spawn_pirate
+        from core.combat import CombatManager
+        state.current_combat = CombatManager(state.player_ship, spawn_pirate())
+        state.previous_state = state.game_state
+        state.game_state = "COMBAT"
+
 def _jumppoint(event, story_text):
 
     if event.sym == tcod.event.KeySym.ESCAPE:
@@ -286,6 +294,73 @@ def _market(event, story_text):
             state.add_message(f"Refueled for {cost} credits")
         else:
             state.add_message("Not enough credits for refuel")
+
+
+def _combat(event, story_text):
+    combat = state.current_combat
+    if combat is None:
+        return
+
+    # --- Combat still active: navigate actions and confirm ------------------
+    if combat.active:
+        if event.sym == tcod.event.KeySym.UP:
+            state.combat_selected_action = (state.combat_selected_action - 1) % 3
+        elif event.sym == tcod.event.KeySym.DOWN:
+            state.combat_selected_action = (state.combat_selected_action + 1) % 3
+        elif event.sym == tcod.event.KeySym.RETURN:
+            if combat.turn == combat.TURN_PLAYER:
+                action = state.combat_selected_action
+                if action == 0:
+                    combat.player_attack()
+                elif action == 1:
+                    combat.player_defend()
+                elif action == 2:
+                    combat.player_escape()
+
+    # --- Combat over: press ENTER to resolve and continue -------------------
+    else:
+        if event.sym == tcod.event.KeySym.RETURN:
+            _resolve_combat_outcome(combat)
+
+
+def _resolve_combat_outcome(combat):
+    """Apply post-combat effects and return to the game."""
+    from core.combat import CombatManager
+
+    if combat.outcome == CombatManager.OUTCOME_VICTORY:
+        state.credits += combat.salvage
+        state.add_message(f"Salvage recovered: +{combat.salvage} credits.")
+
+    elif combat.outcome == CombatManager.OUTCOME_DEFEAT:
+        if state.player_ship.hull <= 0:
+            state.last_killed_by = combat.enemy.name
+            state.current_combat = None
+            state.combat_selected_action = 0
+            state.game_over_reason = f"You got killed by {state.last_killed_by}"
+            state.game_state = "GAME_OVER"
+            return
+
+        damage_taken = state.player_ship.max_hull - state.player_ship.hull
+        repair_cost = damage_taken * 2
+        state.credits = max(0, state.credits - repair_cost)
+        state.player_ship.hull = state.player_ship.max_hull
+
+        state.add_message(f"Repairs cost {repair_cost} credits.")
+        state.add_message("Dropped off at nearest station.")
+
+        state.current_combat = None
+        state.combat_selected_action = 0
+        state.game_state = "SYSTEM"
+        return
+
+    elif combat.outcome == CombatManager.OUTCOME_ESCAPED:
+        state.add_message("Escaped from combat.")
+
+    # Victory or escaped — return to where they were before combat
+    state.current_combat = None
+    state.combat_selected_action = 0
+    state.game_state = state.previous_state
+
 
 
 def _missions(event, story_text):
@@ -441,6 +516,7 @@ HANDLERS = {
     "LOCATION": _location,
     "MARKET": _market,
     "MISSIONS": _missions,
+    "COMBAT": _combat,
     "INVENTORY": _inventory,
     "MESSAGES": _message,
     "MISSION_LOG": _m_log,
