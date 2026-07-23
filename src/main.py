@@ -37,7 +37,7 @@ def main():
 
     # track = random.choice(music_tracks)
 
-    audio.play("sfx/music/MyVeryOwnDeadShip.ogg")
+    audio.play_music("sfx/music/MyVeryOwnDeadShip.ogg")
 
     state.stars, galaxy_seed = generate_stars()
     stars = state.stars
@@ -81,7 +81,7 @@ def main():
 
             elif state.game_state == "STORY":
                 story.update(story_text)
-                audio.device.stop()
+                audio.stop_music()
                 story.draw(console, HEIGHT, story_text)
 
             elif state.game_state == "GALAXY":
