@@ -108,6 +108,45 @@ def _galaxy(event, story_text):
         state.game_state = "SYSTEM"
 
 
+def _calculate_fuel_consumption():
+    """Calculate fuel consumption based on multiple factors for realistic simulation."""
+    base_consumption = 1.0
+    
+    # Factor 1: Cargo weight - heavier cargo increases consumption
+    cargo_weight = len(state.inventory.items) * 0.15
+    if cargo_weight > 0:
+        base_consumption += cargo_weight
+    
+    # Factor 2: Ship condition - damaged hull increases drag/inefficiency
+    hull_damage_ratio = 1.0 - (state.player_ship.hull / state.player_ship.max_hull)
+    damage_penalty = hull_damage_ratio * 0.3
+    base_consumption += damage_penalty
+    
+    # Factor 3: Random variance (±0.2) for unpredictability
+    variance = random.uniform(-0.2, 0.2)
+    base_consumption += variance
+    
+    # Factor 4: System archetype affects local space conditions
+    archetype_efficiency = {
+        "Nebula": 1.3,      # Dense gas clouds increase resistance
+        "Cluster": 1.1,     # Crowded stars require more navigation
+        "Void": 0.9,        # Empty space is more efficient
+        "Core": 1.4,        # High gravity wells near core
+        "Rim": 0.85,        # Outer rim has less interference
+    }
+    system_modifier = archetype_efficiency.get(state.current_system.archetype, 1.0)
+    base_consumption *= system_modifier
+    
+    # Factor 5: Debt pressure - high debt means less maintained engines
+    if state.debt > 5000:
+        base_consumption *= 1.1
+    elif state.debt > 10000:
+        base_consumption *= 1.2
+    
+    # Ensure minimum consumption is at least 0.5
+    return max(0.5, base_consumption)
+
+
 def _system(event, story_text):
     moved = False
 
@@ -125,6 +164,8 @@ def _system(event, story_text):
         moved = True
 
     if moved:
+        fuel_cost = _calculate_fuel_consumption()
+        
         if state.fuel <= 0:
             state.add_message("No fuel!")
             # undo the move
@@ -138,9 +179,27 @@ def _system(event, story_text):
                 state.system_player_x -= 1
             state.game_over_reason = "You ran out of fuel and drifted into the void."
             state.game_state = "GAME_OVER"
+        elif state.fuel < fuel_cost:
+            # Not enough fuel for this movement
+            state.add_message(f"Need {fuel_cost:.1f} fuel, only {state.fuel:.1f} remaining!")
+            # undo the move
+            if event.sym == tcod.event.KeySym.UP:
+                state.system_player_y += 1
+            elif event.sym == tcod.event.KeySym.DOWN:
+                state.system_player_y -= 1
+            elif event.sym == tcod.event.KeySym.LEFT:
+                state.system_player_x += 1
+            elif event.sym == tcod.event.KeySym.RIGHT:
+                state.system_player_x -= 1
+            state.game_over_reason = "You ran out of fuel and drifted into the void."
+            state.game_state = "GAME_OVER"
         else:
-            state.fuel -= 1
+            state.fuel -= fuel_cost
             state.move_counter += 1
+            
+            # Display fuel consumption for player awareness
+            if fuel_cost != 1.0:
+                state.add_message(f"Fuel used: {fuel_cost:.1f}")
 
             # Every 50 moves = 1 day
             if state.move_counter >= 50:
