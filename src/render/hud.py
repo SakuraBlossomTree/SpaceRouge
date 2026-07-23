@@ -11,7 +11,7 @@ def draw(console, width, height):
             f"Credits: {state.credits}"
         )
 
-        fuel_text = f"Fuel: {state.fuel}/{state.max_fuel}"
+        fuel_text = f"Fuel: {state.fuel:.2f}/{state.max_fuel:.2f}"
         day_text = f"Day: {state.day}"
         debt_text = f"Debt: {state.debt}"
         payment_due = f"Payment due: {state.next_payment_day}"
