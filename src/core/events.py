@@ -7,8 +7,8 @@ import random
 from core import state, audio, entities, galaxy_view, fonts, tutorial
 from core.entities import ITEMS
 from core.missions import generate_missions
-from core.debt import advance_day
-from core.world import FUEL_PRICES
+from core.debt import advance_day, check_deadline
+from core.world import FUEL_PRICES, sell_price
 from core import travel, quickmenu
 from core.save import save
 from core.encounter import check_arrival, check_jump
@@ -25,7 +25,7 @@ OVERLAY_KEYS = {
     tcod.event.KeySym.J: "NOTEBOOK",
     tcod.event.KeySym.K: "PRICELOG",
 }
-NO_OVERLAY_STATES = ("TITLE", "STORY", "HYPERSPACE", "GAME_OVER")
+NO_OVERLAY_STATES = ("TITLE", "STORY", "HYPERSPACE", "GAME_OVER", "VICTORY")
 
 
 def _close_overlay():
@@ -37,6 +37,11 @@ def handle_event(event, story_text, context):
     # Writing a note: every key (and typed text) goes to the notebook
     if state.note_input is not None:
         _note_typing(event)
+        return
+
+    # Paying down the loan: digits, M (max), ENTER (pay), ESC (cancel)
+    if state.debt_input is not None:
+        _debt_typing(event)
         return
 
     # Mouse wheel zooms the galaxy chart and scrolls the story text
@@ -114,7 +119,7 @@ def handle_event(event, story_text, context):
         return
 
     if event.sym == tcod.event.KeySym.Q and state.seed_input is None:
-        if state.game_state == "GAME_OVER":
+        if state.game_state in ("GAME_OVER", "VICTORY"):
             audio.shutdown()
             raise SystemExit()
         state.quit_confirm = True
@@ -158,7 +163,7 @@ def handle_event(event, story_text, context):
 
     if event.sym == tcod.event.KeySym.M:
         if state.game_state not in ("TITLE", "STORY", "HYPERSPACE", "GALAXY",
-                                    "GAME_OVER", "COMBAT"):
+                                    "GAME_OVER", "VICTORY", "COMBAT"):
             # overlays (cargo, log...) remember the screen under them
             back = state.game_state
             if back in OVERLAY_KEYS.values():
@@ -234,8 +239,6 @@ def _title(event, story_text):
         state.game_state = "STORY"
         state.story_scroll = 0
         state.story_follow = True
-    elif sym in (tcod.event.KeySym.G, tcod.event.KeySym.LEFT, tcod.event.KeySym.RIGHT):
-        travel.toggle_difficulty()
     elif sym == tcod.event.KeySym.S:
         state.seed_input = ""
     elif sym == tcod.event.KeySym.L and state.last_seed is not None \
@@ -386,7 +389,7 @@ def _galaxy_snap_cursor():
 
 
 # screens the galaxy chart can return to (everything else: back to the system)
-RETURNABLE = ("SYSTEM", "LOCATION", "MARKET", "MISSIONS", "JUMPPOINT",
+RETURNABLE = ("SYSTEM", "LOCATION", "MARKET", "MISSIONS", "SHIPYARD", "JUMPPOINT",
               "INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE", "RADIO", "NOTEBOOK", "PRICELOG")
 
 
@@ -521,14 +524,8 @@ def _jumppoint(event, story_text):
                               f"{state.fuel:.0f}. Refuel at a station (5).")
             travel.check_stranded()
             return
-        if state.credits < state.current_object.cost:
-            state.add_message("Not enough credits.")
-            return
-
         state.fuel -= need
         advance_day()
-
-        state.credits -= state.current_object.cost
 
         state.pending_destination = (state.current_object.destination)
 
@@ -564,10 +561,10 @@ def _station_nav(event):
     from render.location import LOCATION_ITEMS
     sym = event.sym
     number_keys = [tcod.event.KeySym.N1, tcod.event.KeySym.N2, tcod.event.KeySym.N3,
-                   tcod.event.KeySym.N4, tcod.event.KeySym.N5]
-    number_keys += [k for k in _key("KP_1", "KP_2", "KP_3", "KP_4", "KP_5")]
+                   tcod.event.KeySym.N4, tcod.event.KeySym.N5, tcod.event.KeySym.N6]
+    number_keys += [k for k in _key("KP_1", "KP_2", "KP_3", "KP_4", "KP_5", "KP_6")]
     if sym in number_keys:
-        i = number_keys.index(sym) % 5
+        i = number_keys.index(sym) % 6
         state.location_index = i
         LOCATION_ACTIONS.get(LOCATION_ITEMS[i][2], _closed)()
         return True
@@ -623,7 +620,7 @@ def goto_station(screen):
     state.galaxy_return = None
     state.overlay_return = None
     {"LOCATION": _open_station, "MARKET": _open_market,
-     "MISSIONS": _open_missions}[screen]()
+     "MISSIONS": _open_missions, "SHIPYARD": _open_shipyard}[screen]()
 
 
 def quick_refuel():
@@ -711,7 +708,9 @@ def _open_missions():
     state.game_state = "MISSIONS"
 
     # Only generate if this location has no available missions yet
-    existing_sources = {m.source for m in state.missions if m.status == "available"}
+    # a board is only current for the day it was posted; a new day means new contracts
+    existing_sources = {m.source for m in state.missions
+                        if m.status == "available" and m.day == state.day}
 
     if state.current_location.name not in existing_sources:
         new_missions = generate_missions(
@@ -719,6 +718,8 @@ def _open_missions():
             state.current_system,
             state.stars,
             count=4,
+            completed=state.completed_mission_keys,
+            day=state.day,
         )
         state.missions = [m for m in state.missions if m.status == "active"]
         state.missions.extend(new_missions)
@@ -730,6 +731,90 @@ def _open_missions():
     ]
 
     state.selected_mission_index = 0
+
+
+def _open_shipyard():
+    state.location_index = 1
+    state.game_state = "SHIPYARD"
+
+
+def _shipyard(event, story_text):
+    from core import shipyard
+    sym = event.sym
+    n = len(shipyard.UPGRADES)
+    if sym == tcod.event.KeySym.ESCAPE:
+        state.game_state = "LOCATION"
+    elif _station_nav(event):
+        return
+    elif sym == tcod.event.KeySym.UP:
+        state.shipyard_index = (state.shipyard_index - 1) % n
+    elif sym == tcod.event.KeySym.DOWN:
+        state.shipyard_index = (state.shipyard_index + 1) % n
+    elif sym in _key("RETURN", "KP_ENTER"):
+        ok, message = shipyard.buy(shipyard.UPGRADES[state.shipyard_index][0])
+        state.add_message(message)
+
+
+_DIGIT_KEYS = {}
+for _d in range(10):
+    for _name in (f"N{_d}", f"KP_{_d}"):
+        if hasattr(tcod.event.KeySym, _name):
+            _DIGIT_KEYS[getattr(tcod.event.KeySym, _name)] = str(_d)
+
+
+def _open_debt():
+    """Station menu > Pay Debt: opens the amount panel."""
+    state.location_index = 5
+    state.game_state = "LOCATION"
+    if state.debt <= 0:
+        state.add_message("You have no debt left.")
+        return
+    state.debt_input = ""
+
+
+def _pay_debt(amount):
+    """Pay `amount` credits toward the loan right now. Returns True if paid."""
+    amount = min(amount, state.debt)
+    if amount <= 0:
+        state.add_message("Type an amount to pay.")
+        return False
+    if amount > state.credits:
+        state.add_message(f"You only have {state.credits} credits.")
+        return False
+    state.credits -= amount
+    state.debt -= amount
+    state.add_message(f"Paid {amount} credits toward your loan. Debt is now {state.debt}.")
+    if state.debt == 0:
+        state.add_message("Your loan is fully paid off. You own your ship!")
+        if not state.victory_seen:
+            state.game_state = "VICTORY"
+    return True
+
+
+def _victory(event, story_text):
+    """Loan paid off: C / ENTER go back to flying (Q quits, handled globally)."""
+    if event.sym in _key("C", "RETURN", "KP_ENTER"):
+        state.victory_seen = True
+        state.game_state = "LOCATION"
+        state.add_message("Free flight: the loan is paid. Keep trading as long as you like.")
+
+
+def _debt_typing(event):
+    if not isinstance(event, tcod.event.KeyDown):
+        return
+    sym = event.sym
+    if sym == tcod.event.KeySym.ESCAPE:
+        state.debt_input = None
+    elif sym in _key("RETURN", "KP_ENTER"):
+        amount = int(state.debt_input) if state.debt_input else 0
+        if _pay_debt(amount):
+            state.debt_input = None
+    elif sym in _key("BACKSPACE", "DELETE"):
+        state.debt_input = state.debt_input[:-1]
+    elif sym == tcod.event.KeySym.M:
+        state.debt_input = str(max(0, min(state.credits, state.debt)))
+    elif sym in _DIGIT_KEYS and len(state.debt_input) < 9:
+        state.debt_input = (state.debt_input + _DIGIT_KEYS[sym]).lstrip("0")
 
 
 def _refuel():
@@ -759,6 +844,8 @@ def _refuel():
 LOCATION_ACTIONS = {
     "market": _open_market,
     "missions": _open_missions,
+    "debt": _open_debt,
+    "shipyard": _open_shipyard,
     "refuel": _refuel,
 }
 
@@ -799,19 +886,35 @@ def _buy(name):
     state.inventory.items.append(item)
     if state.economy:
         state.economy.player_trade(state.current_location, name, 1)
+    basis = state.cost_basis.setdefault(name, [0, 0.0])
+    basis[0] += 1
+    basis[1] += price
     state.add_message(f"Bought 1 {name} for {price} cr.")
 
 
 def _sell(name):
-    price = state.current_location.market[name]
+    price = sell_price(state.current_location.market[name])
     for item in state.inventory.items:
-        if item.name == name:
+        if item.name == name and not item.mission_key:     # contract cargo is not for sale
             state.inventory.items.remove(item)
             state.credits += price
             if state.economy:
                 state.economy.player_trade(state.current_location, name, -1)
-            state.add_message(f"Sold 1 {name} for {price} cr.")
+            note = ""
+            basis = state.cost_basis.get(name)
+            if basis and basis[0] > 0:
+                avg = basis[1] / basis[0]
+                basis[0] -= 1
+                basis[1] -= avg
+                if basis[0] <= 0:
+                    state.cost_basis.pop(name, None)
+                diff = price - avg
+                note = f" (+{diff:.0f} profit)" if diff >= 0 else f" ({diff:.0f} loss)"
+            state.add_message(f"Sold 1 {name} for {price} cr{note}.")
             return
+    if any(i.name == name and i.mission_key for i in state.inventory.items):
+        state.add_message(f"Your {name} is contract cargo - deliver it, don't sell it.")
+        return
     state.add_message(f"You have no {name} to sell.")
 
 
@@ -911,8 +1014,13 @@ def _missions(event, story_text):
                     state.add_message("Not enough cargo space for this mission.")
                     return
 
+                # Tag each unit with where it came from, so only this
+                # contract's cargo can be handed in for it.
                 for _ in range(mission.amount):
-                    state.inventory.items.append(item)
+                    state.inventory.items.append(entities.Item(
+                        item.name, item.size,
+                        origin_system=mission.source_system,
+                        mission_key=mission.key))
 
             mission.status = "active"
             state.add_message(f"Mission accepted: {mission.title}")
@@ -920,7 +1028,7 @@ def _missions(event, story_text):
         elif mission.status == "active" and state.current_location and mission.destination == state.current_location.name:
             if mission.mission_type == "cargo":
                 item = entities.ITEMS[mission.cargo]
-                carried = sum(1 for i in state.inventory.items if i.name == item.name)
+                carried = sum(1 for i in state.inventory.items if i.mission_key == mission.key)
 
                 if carried < mission.amount:
                     state.add_message("You don't have the required cargo anymore.")
@@ -928,7 +1036,7 @@ def _missions(event, story_text):
 
                 removed = 0
                 for cargo_item in list(state.inventory.items):
-                    if cargo_item.name == item.name and removed < mission.amount:
+                    if cargo_item.mission_key == mission.key and removed < mission.amount:
                         state.inventory.items.remove(cargo_item)
                         removed += 1
 
@@ -937,6 +1045,7 @@ def _missions(event, story_text):
                 state.add_message(f"Received item: {item_name}")
 
             mission.status = "completed"
+            state.completed_mission_keys.add(mission.key)
             state.add_message(f"Mission complete: {mission.title} (+{mission.reward_credits} credits)")
 
         else:
@@ -1010,13 +1119,6 @@ def _exchange(event, story_text):
         if n:
             step = -1 if sym == tcod.event.KeySym.UP else 1
             state.exchange_index = (state.exchange_index + step) % n
-    elif sym == tcod.event.KeySym.U:
-        # TODO: replace with a purchasable ship upgrade; temporary debug key.
-        # Deliberately unadvertised unless DEBUG is on (see render/exchange.py).
-        state.market_scanner = not state.market_scanner
-        state.exchange_index = 0
-        state.add_message("Long-range market scanner "
-                          + ("installed." if state.market_scanner else "removed."))
     elif sym == tcod.event.KeySym.F and state.DEBUG and state.economy:
         state.economy.tick()      # debug: run the economy one day forward
 
@@ -1165,6 +1267,7 @@ def update_hyperspace():
                     state.hyperspace_stage = 0
 
                     state.game_state = "SYSTEM"
+                    check_deadline()
                     travel.check_stranded()
 
                     break
@@ -1188,4 +1291,6 @@ HANDLERS = {
     "RADIO": _radio,
     "NOTEBOOK": _notebook,
     "PRICELOG": _pricelog,
+    "VICTORY": _victory,
+    "SHIPYARD": _shipyard,
 }

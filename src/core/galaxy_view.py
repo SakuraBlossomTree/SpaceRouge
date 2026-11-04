@@ -130,6 +130,35 @@ def zoom(step, anchor=None):
     set_zoom(state.galaxy_zoom - step, anchor)
 
 
+def jump_links(stars, depth):
+    """Gate links within `depth` hops of your system, for the galaxy chart.
+
+    Returns ([(a, b, level)], reached): level 1 links leave your own system,
+    level 2 links leave its neighbours, and so on; `reached` is the set of
+    systems those links lead to (your own system is not in it)."""
+    here = state.current_system.name if state.current_system else None
+    by_name = {s.name: s for s in stars}
+    if here not in by_name:
+        return [], set()
+    seen, frontier, done, edges = {here}, [here], set(), []
+    for level in range(1, depth + 1):
+        nxt = []
+        for name in frontier:
+            for jp in by_name[name].system.jump_points:
+                d = jp.destination
+                if d not in by_name:
+                    continue
+                pair = tuple(sorted((name, d)))
+                if pair not in done:
+                    done.add(pair)
+                    edges.append((name, d, level))
+                if d not in seen:
+                    seen.add(d)
+                    nxt.append(d)
+        frontier = nxt
+    return edges, seen - {here}
+
+
 def star_at_cell(stars, sx, sy):
     """The star drawn at a screen cell (nearest to the cell centre if several)."""
     best, best_d = None, None

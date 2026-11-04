@@ -16,6 +16,7 @@ from effects.effects import twinkle_color
 from render import ui
 
 LINK_FG = (75, 115, 155)
+LINK2_FG = (50, 78, 105)       # links two or more jumps out (Star Jump Scanner)
 DEBUG_LINK_FG = (45, 45, 60)
 NAME_FG = (95, 110, 140)
 LINKED_FG = (130, 160, 195)
@@ -232,14 +233,13 @@ def draw(console, width, height, stars):
                 drawn.add(pair)
                 _line(console, *proj[star.name], *proj[jp.destination], "·", DEBUG_LINK_FG)
 
-    linked = set()
-    if state.current_system and state.current_star:
-        for jp in state.current_system.jump_points:
-            if jp.destination not in proj:
-                continue
-            linked.add(jp.destination)
-            _line(console, *proj[state.current_star.name], *proj[jp.destination],
-                  "·", LINK_FG)
+    # The Star Jump Scanner (shipyard) decides how many jumps of links you see:
+    # 1 to start, one more per level. Links further out are drawn dimmer.
+    from core import shipyard
+    edges, linked = view.jump_links(stars, shipyard.jump_view_range())
+    for a, b, level in sorted(edges, key=lambda e: -e[2]):   # near links drawn last
+        if a in proj and b in proj:
+            _line(console, *proj[a], *proj[b], "·", LINK_FG if level == 1 else LINK2_FG)
 
     # --- contract targets ------------------------------------------------------
     targets = {m.dest_system for m in state.missions if m.status == "active"}
@@ -397,6 +397,14 @@ def preview_rows(star, stars):
     ]
     if contracts:
         rows.append(("Contracts here", str(contracts), ui.KEY))
+    if not here and here_name and view.scanner_covers(star, stars):
+        from core import travel
+        est = travel.route_estimate(stars, here_name, star.name)
+        if est is None:
+            rows.append(("Autopilot fuel", "no route", ui.BAD))
+        else:
+            jumps, fuel = est
+            rows.append(("Autopilot fuel", f"~{fuel} fuel, {jumps} jump{'s' if jumps != 1 else ''}", ui.KEY))
     return rows
 
 

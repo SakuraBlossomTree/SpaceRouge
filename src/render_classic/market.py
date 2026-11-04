@@ -29,7 +29,7 @@ def draw(console, width):
     console.print(2, 6, f"Credits: {state.credits}")
     console.print(2, 7, f"Cargo: {state.inventory.used_space()}/{state.inventory.space}")
 
-    held = Counter(item.name for item in state.inventory.items)
+    held = Counter(item.name for item in state.inventory.items if not item.mission_key)
     goods = market_goods()
     state.market_index = min(state.market_index, max(0, len(goods) - 1))
 

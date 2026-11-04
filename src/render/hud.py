@@ -13,7 +13,7 @@ IX = X + 2            # inner x
 IW = W - 4            # inner width
 
 # Screens that take over the whole window (no sidebar)
-FULLSCREEN = ("TITLE", "STORY", "GAME_OVER")
+FULLSCREEN = ("TITLE", "STORY", "GAME_OVER", "VICTORY")
 
 
 # ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ HINTS = {
                ("C", "Centre on you"), ("X", "Scan"), ("TAB", "Next star"),
                ("N", "Minimap"), ("R", "Routes"), ("M", "Close")],
     "JUMPPOINT": [("ENTER", "Engage jump"), ("ESC", "Cancel")],
-    "LOCATION": [("↑↓", "Select"), ("ENTER", "Open"), ("1/3/5", "Trade/Missions/Refuel"),
+    "LOCATION": [("↑↓", "Select"), ("ENTER", "Open"), ("1-6", "Station shortcuts"),
                  ("TAB", "Next screen"), ("M", "Galaxy"), ("I", "Cargo"), ("ESC", "Undock")],
     "MARKET": [("↑↓", "Select"), ("→/B", "Buy"), ("←/S", "Sell"),
                ("TAB", "Next screen"), ("3", "Missions"), ("5", "Refuel"),
@@ -36,6 +36,7 @@ HINTS = {
     "MISSIONS": [("↑↓", "Select"), ("ENTER", "Accept/Deliver"),
                  ("V", "Show on map"), ("TAB", "Next screen"), ("1", "Trade"),
                  ("5", "Refuel"), ("ESC", "Station")],
+    "SHIPYARD": [("↑↓", "Select"), ("ENTER", "Buy"), ("TAB", "Next screen"), ("ESC", "Station")],
     "INVENTORY": [("I", "Close"), ("ESC", "Close")],
     "MESSAGES": [("↑↓", "Scroll"), ("L", "Close"), ("ESC", "Close")],
     "MISSION_LOG": [("P", "Close"), ("ESC", "Close")],
@@ -63,9 +64,7 @@ def _star_color(star):
 
 def _ship_panel(console, y, h):
     ship = state.player_ship
-    from core import travel
-    hard = travel.hard()
-    ui.frame(console, X, y, W, h, "Ship", right_title="HARD" if hard else "EASY")
+    ui.frame(console, X, y, W, h, "Ship")
     ui.text(console, IX, y + 1, f"{ship.name}", fg=ui.TEXT)
     ui.text(console, IX + len(ship.name) + 1, y + 1, "· light hauler", fg=ui.DIM)
     ui.right(console, IX + IW - 1, y + 1, f"DAY {state.day}", fg=ui.ACCENT)
@@ -78,7 +77,7 @@ def _ship_panel(console, y, h):
 
     ui.meter(console, IX, y + 5, "Hull", ship.hull, ship.max_hull, IW)
     ui.meter(console, IX, y + 8, "Fuel", state.fuel, state.max_fuel, IW,
-             fmt="{:.1f}/{:.0f}" if hard else "{:.0f}/{:.0f}")
+             fmt="{:.0f}/{:.0f}")
     used = state.inventory.used_space()
     ui.meter(console, IX, y + 11, "Cargo", used, state.inventory.space, IW,
              fg=ui.ACCENT if used < state.inventory.space else ui.WARN)
@@ -95,24 +94,16 @@ def _loan_panel(console, y, h):
     ui.bar(console, IX, y + 2, IW - 6, paid, state.starting_debt, ui.GOOD)
     ui.right(console, IX + IW - 1, y + 2, f"{pct:4.1f}%", fg=ui.DIM)
 
-    ui.kv(console, IX, y + 3, IW, "Instalment",
-          f"{ui.fmt_int(state.weekly_payment)} cr")
-
-    days_left = state.next_payment_day - state.day
-    if days_left <= 1:
-        due_fg = ui.BAD
-    elif days_left <= 3:
-        due_fg = ui.WARN
+    ui.kv(console, IX, y + 3, IW, "Repaid", f"{ui.fmt_int(paid)} cr",
+          value_fg=ui.GOOD if paid else ui.DIM)
+    if state.debt > 0:
+        left = state.loan_deadline_day - state.day
+        dfg = ui.BAD if left <= 7 else (ui.WARN if left <= 30 else ui.TEXT)
+        ui.kv(console, IX, y + 4, IW, "Deadline",
+              f"Day {state.loan_deadline_day} ({max(0, left)}d)", value_fg=dfg)
+        ui.text(console, IX, y + 5, ui.clip("Pay at any station (6)", IW), fg=ui.FAINT)
     else:
-        due_fg = ui.TEXT
-    when = "TODAY" if days_left <= 0 else f"in {days_left}d"
-    ui.kv(console, IX, y + 4, IW, "Due",
-          f"Day {state.next_payment_day} ({when})", value_fg=due_fg)
-
-    console.print(IX, y + 5, "Strikes", fg=ui.DIM)
-    strikes = "".join("■" if i < state.missed_payments else "·" for i in range(4))
-    sfg = ui.BAD if state.missed_payments else ui.FAINT
-    ui.right(console, IX + IW - 1, y + 5, " ".join(strikes), fg=sfg)
+        ui.text(console, IX, y + 4, "Loan paid off!", fg=ui.GOOD)
 
 
 def _describe(obj):
@@ -134,10 +125,12 @@ def _describe(obj):
              ui.GOOD if obj.market else ui.FAINT),
         ]
     if hasattr(obj, "destination"):     # Jump point
-        fg = ui.GOOD if state.credits >= obj.cost else ui.BAD
+        from core import travel
+        need = travel.jump_fuel(obj)
+        fg = ui.GOOD if state.fuel >= need else ui.BAD
         return [
             (f"Θ Jump gate → {obj.destination}", ui.ACCENT),
-            (f"Toll {obj.cost} cr", fg),
+            (f"Jump fuel {need}", fg),
         ]
     if hasattr(obj, "system"):          # Star (galaxy)
         lines = [
@@ -195,7 +188,7 @@ def _location_panel(console, y, h):
         if star is not None:
             ui.text(console, IX, cy, "SYSTEM PREVIEW", ui.KEY)
             ui.text(console, IX + 15, cy, ui.clip(star.name, IW - 15), _star_color(star))
-            for i, (k, v, fg) in enumerate(preview_rows(star, state.stars)[:5]):
+            for i, (k, v, fg) in enumerate(preview_rows(star, state.stars)[:6]):
                 ui.kv(console, IX, cy + 1 + i, IW, k, v, value_fg=fg)
             return
 
@@ -205,9 +198,13 @@ def _location_panel(console, y, h):
         for line, fg in _describe(state.look_object):
             ui.text(console, IX, cy, ui.clip(line, IW), fg=fg)
             cy += 1
+        if gs == "SYSTEM" and state.look_object is not None and hasattr(state.look_object, "x"):
+            from core import travel
+            ui.text(console, IX, cy, ui.clip(travel.system_autopilot_line(state.look_object), IW), fg=ui.KEY)
+            cy += 1
         return
 
-    if gs in ("LOCATION", "MARKET", "MISSIONS") and state.current_location:
+    if gs in ("LOCATION", "MARKET", "MISSIONS", "SHIPYARD") and state.current_location:
         ui.text(console, IX, cy, "DOCKED AT", fg=ui.GOOD)
         cy += 1
         for line, fg in _describe(state.current_location):

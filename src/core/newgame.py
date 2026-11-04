@@ -42,7 +42,12 @@ def build_galaxy(seed=None):
     state.current_star = None
     state.current_system = None
     state.missions = []
-    state.market_scanner = False   # upgrades are not carried between galaxies
+    state.completed_mission_keys = set()
+    state.move_counter = 0
+    state.victory_seen = False
+    state.cost_basis = {}
+    state.upgrades = {}
+    state.market_scanner = True    # fitted free; upgrades are not carried between galaxies
     state.exchange_tab = 0
     state.exchange_index = 0
     economy.init(stars, seed)

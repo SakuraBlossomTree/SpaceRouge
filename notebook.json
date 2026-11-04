@@ -8,5 +8,19 @@
       "day": 2,
       "text": "Calyx Eridani (Rho Minor): Food 14, Water 10, Ore 17, Rare Min 51, Machin 28, Medicine 16, Electr 26, Luxury 51"
     }
+  ],
+  "380805698": [
+    {
+      "day": 3,
+      "text": "Mars (Sol): Food 10, Water 7, Ore 17, Rare Min 42, Machin 31, Medicine 24, Electr 34, Luxury 48"
+    },
+    {
+      "day": 4,
+      "text": "Earth (Sol): Food 11, Water 10, Ore 14, Rare Min 40, Machin 28, Medicine 26, Electr 36, Luxury 52"
+    },
+    {
+      "day": 4,
+      "text": "Earth (Sol): Food 11, Water 10, Ore 14, Rare Min 40, Machin 28, Medicine 26, Electr 36, Luxury 49"
+    }
   ]
 }

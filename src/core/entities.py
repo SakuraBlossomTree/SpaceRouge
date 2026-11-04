@@ -52,9 +52,11 @@ class JumpPoint:
 
 
 class Item:
-    def __init__(self, name, size):
+    def __init__(self, name, size, origin_system=None, mission_key=None):
         self.name = name
         self.size = size
+        self.origin_system = origin_system   # system the contract cargo came from
+        self.mission_key = mission_key       # ties contract cargo to its mission
 
 
 class Inventory:

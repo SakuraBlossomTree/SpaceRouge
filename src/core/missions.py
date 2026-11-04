@@ -9,8 +9,12 @@ from core.seedgen import SeedSequence
 class Mission:
     def __init__(self, id, title, description, mission_type, reward_credits,
                  reward_items, status, source, destination, difficulty,
-                 cargo=None, amount=None, systems_to_visit=None, dest_system=None):
+                 cargo=None, amount=None, systems_to_visit=None, dest_system=None,
+                 source_system=None, key=None):
         self.id = id
+        self.source_system = source_system   # system the mission was posted in
+        self.key = key                       # stable across regeneration
+        self.day = None                      # in-game day this board was posted
         self.title = title
         self.mission_type = mission_type
         self.description = description
@@ -33,10 +37,15 @@ class Mission:
 # --- Reward tables by difficulty ---------------------------------------------
 
 REWARDS = {
-    1: (100, 300),   # easy
-    2: (300, 600),   # medium
-    3: (600, 1000),  # hard
+    1: (130, 400),   # easy
+    2: (400, 800),   # medium
+    3: (800, 1300),  # hard
 }
+
+# Extra pay on top of the difficulty roll
+REWARD_PER_JUMP = {1: 50, 2: 70, 3: 90}   # per gate jump, by difficulty
+MAX_JUMPS = {1: 3, 2: 6, 3: 99}           # how far a contract of each difficulty may send you
+CARGO_VALUE_SHARE = 0.5   # share of the cargo's base market value
 
 # --- Cargo amounts by difficulty ---------------------------------------------
 
@@ -137,7 +146,7 @@ def _next_id():
 
 # --- Core generator ----------------------------------------------------------
 
-def generate_missions(location, current_system, all_stars, count=4):
+def generate_missions(location, current_system, all_stars, count=4, completed=(), day=0):
     """
     Generate a pool of missions for a location.
     
@@ -148,7 +157,8 @@ def generate_missions(location, current_system, all_stars, count=4):
     """
     # zlib.crc32 is stable between runs (Python's hash() of a str is not),
     # so the same galaxy seed always posts the same contracts at a station
-    key = zlib.crc32((location.name + "|" + current_system.name).encode("utf-8"))
+    # the day is part of the seed: a station posts a fresh board every day
+    key = zlib.crc32((f"{location.name}|{current_system.name}|{day}").encode("utf-8"))
     seed = (state.galaxy_seed ^ key) % (2**32)
     seq = SeedSequence(seed)
     rng = random.Random(seed)
@@ -162,6 +172,13 @@ def generate_missions(location, current_system, all_stars, count=4):
     if not other_stars:
         return missions
 
+    # gate jumps from here to every other system (fewest-jump route)
+    from core import travel
+    dist = {}
+    for s_ in other_stars:
+        est = travel.route_estimate(all_stars, current_system.name, s_.name)
+        dist[s_.name] = est[0] if est else 99
+
     weights = ARCHETYPE_WEIGHTS.get(archetype, ARCHETYPE_WEIGHTS["Trade Hub"])
     types   = list(weights.keys())
     w_vals  = list(weights.values())
@@ -174,7 +191,10 @@ def generate_missions(location, current_system, all_stars, count=4):
         r_min, r_max = REWARDS[difficulty]
         reward = r_min + seq.next_seed() % (r_max - r_min)
 
-        dest_star = other_stars[seq.next_seed() % len(other_stars)]
+        pool = [s_ for s_ in other_stars if dist[s_.name] <= MAX_JUMPS[difficulty]]
+        if not pool:   # tiny/sparse galaxy: fall back to the nearest systems
+            pool = sorted(other_stars, key=lambda s_: dist[s_.name])[:3]
+        dest_star = pool[seq.next_seed() % len(pool)]
         dest_system  = dest_star.system
         dest_name    = (
             dest_system.planets[0].name if dest_system.planets
@@ -187,6 +207,12 @@ def generate_missions(location, current_system, all_stars, count=4):
             commodity  = rng.choice(cargo_pool)
             a_min, a_max = CARGO_AMOUNTS[difficulty]
             amount     = rng.randint(a_min, a_max)
+            # farther deliveries and pricier cargo pay more (no RNG used here)
+            from core.world import BASE_PRICES
+            jumps = min(dist[dest_star.name], 99)
+            reward += REWARD_PER_JUMP[difficulty] * jumps
+            reward += int(CARGO_VALUE_SHARE * amount * BASE_PRICES.get(commodity, 0))
+            reward = int(round(reward / 5.0)) * 5
             title_t, desc_t = rng.choice(CARGO_TEMPLATES)
             title = title_t
             desc  = desc_t.format(
@@ -210,6 +236,7 @@ def generate_missions(location, current_system, all_stars, count=4):
                 destination=dest_name,
                 dest_system=dest_star.name,
                 difficulty=difficulty,
+                source_system=current_system.name,
             ))
 
         elif mission_type == "survey":
@@ -266,4 +293,9 @@ def generate_missions(location, current_system, all_stars, count=4):
                 difficulty=difficulty,
             ))
 
-    return missions
+    # Keys are stable (same place, same slot), so a contract the player has
+    # already finished is never posted again.
+    for idx, m in enumerate(missions):
+        m.key = f"{location.name}|{current_system.name}|{day}|{idx}"
+        m.day = day
+    return [m for m in missions if m.key not in completed]

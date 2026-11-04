@@ -16,8 +16,8 @@ from core import state
 
 K = tcod.event.KeySym
 
-NOT_HERE = ("TITLE", "STORY", "HYPERSPACE", "GAME_OVER", "COMBAT")
-DOCKED = ("LOCATION", "MARKET", "MISSIONS")
+NOT_HERE = ("TITLE", "STORY", "HYPERSPACE", "GAME_OVER", "VICTORY", "COMBAT")
+DOCKED = ("LOCATION", "MARKET", "MISSIONS", "SHIPYARD")
 OVERLAYS = ("INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE", "RADIO", "NOTEBOOK", "PRICELOG")
 
 
@@ -68,6 +68,8 @@ def build():
             _item("Trading Post", "1", lambda: events.goto_station("MARKET"),
                   here=gs == "MARKET", enabled=bool(loc.market),
                   note="" if loc.market else "no market"),
+            _item("Shipyard", "2", lambda: events.goto_station("SHIPYARD"),
+                  here=gs == "SHIPYARD"),
             _item("Missions Board", "3", lambda: events.goto_station("MISSIONS"),
                   here=gs == "MISSIONS"),
             _item("Refuel", "5", events.quick_refuel, note=fuel_note,
@@ -110,7 +112,7 @@ def build():
         for jp in system.jump_points:
             items.append(_item(f"Gate → {jp.destination}", "",
                                lambda jp=jp: events.fly_to(jp, "jump"),
-                               note="jump menu" if travel.hard() else f"{travel.jump_fuel(jp)} fuel",
+                               note=f"{travel.jump_fuel(jp)} fuel",
                                here=(jp.x, jp.y) == (px, py)))
         sections.append((f"Fly to (in {system.name})", items))
     return sections

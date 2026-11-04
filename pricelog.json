@@ -430,5 +430,2689 @@
         "day": 3
       }
     }
+  },
+  "912591790": {
+    "Food": {
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Earth": {
+        "price": 16,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Earth": {
+        "price": 46,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Earth": {
+        "price": 33,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Earth": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "3161331935": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "3776962144": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 11,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 8,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 8,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 8,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 17,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 13,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 40,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 42,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 30,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 32,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 29,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 25,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 25,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 36,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 33,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 35,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Rho Deep Hub": {
+        "price": 52,
+        "system": "Rho Deep",
+        "day": 2
+      },
+      "Kepler Rho": {
+        "price": 50,
+        "system": "Rho Deep",
+        "day": 3
+      },
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "1298274892": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 16,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 12,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 12,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 16,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 15,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 7,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 6,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 10,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 8,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 7,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 8,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 10,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 17,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 17,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 13,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 37,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 29,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 30,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 50,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 49,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 53,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 43,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 42,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 31,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 34,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 32,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 25,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 25,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 17,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 17,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 16,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 35,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 33,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 22,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 23,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 24,
+        "system": "Rho IV",
+        "day": 16
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Epsilon V Port": {
+        "price": 49,
+        "system": "Epsilon V",
+        "day": 3
+      },
+      "Duren Cygni": {
+        "price": 48,
+        "system": "Theta Prime",
+        "day": 11
+      },
+      "Kappa Minor Waypoint": {
+        "price": 50,
+        "system": "Kappa Minor",
+        "day": 7
+      },
+      "Frontier Kepler": {
+        "price": 50,
+        "system": "Beta Major",
+        "day": 13
+      },
+      "Draconis Rho": {
+        "price": 51,
+        "system": "Rho IV",
+        "day": 16
+      }
+    }
+  },
+  "1436538664": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 9,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 32,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 29,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "1670651209": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 17,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 10,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 14,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 51,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 32,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 16,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 32,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 21,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Sigma Expanse Waypoint": {
+        "price": 52,
+        "system": "Sigma Expanse",
+        "day": 3
+      }
+    }
+  },
+  "1867936788": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 30,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 25,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 35,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "3105989480": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 10,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 17,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 15,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 10,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 8,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 9,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 7,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 9,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 14,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 17,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 15,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 14,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 42,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 46,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 50,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 41,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 28,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 32,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 42,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 30,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 31,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 24,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 32,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 19,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 24,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 35,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 38,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 30,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 37,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 2
+      },
+      "Gorn Cygni": {
+        "price": 51,
+        "system": "Phi Secundus",
+        "day": 15
+      },
+      "Lambda Drift Outpost": {
+        "price": 48,
+        "system": "Lambda Drift",
+        "day": 16
+      },
+      "Gorn Frontier": {
+        "price": 52,
+        "system": "Sigma Major",
+        "day": 19
+      },
+      "Nova Gorn": {
+        "price": 49,
+        "system": "Psi Secundus",
+        "day": 22
+      }
+    }
+  },
+  "965068943": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "4057635331": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 15,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 13,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 16,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 15,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 17,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 6,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 6,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 7,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 6,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 8,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 7,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 6,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 6,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 14,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 23,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 23,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 25,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 23,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 54,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 40,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 48,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 46,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 49,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 30,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 19,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 26,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 26,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 24,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 13,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 27,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 37,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 36,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 34,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 26,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 19,
+        "system": "Theta Point",
+        "day": 10
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Reach Outpost": {
+        "price": 50,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Relay": {
+        "price": 52,
+        "system": "Alpha Deep",
+        "day": 5
+      },
+      "Alpha Deep Platform": {
+        "price": 48,
+        "system": "Alpha Deep",
+        "day": 6
+      },
+      "Arden": {
+        "price": 50,
+        "system": "Omega Deep",
+        "day": 8
+      },
+      "Theta Point Depot": {
+        "price": 48,
+        "system": "Theta Point",
+        "day": 10
+      }
+    }
+  },
+  "293225263": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "1353574584": {
+    "Food": {
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 19,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 14,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Water": {
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 6,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 9,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Ore": {
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 17,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 16,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Rare Minerals": {
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 56,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 60,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Machinery": {
+      "Earth": {
+        "price": 28,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 32,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 30,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Medicine": {
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 13,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 13,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Electronics": {
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 23,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 21,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    },
+    "Luxury Goods": {
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      },
+      "Xi Expanse Orbital": {
+        "price": 48,
+        "system": "Xi Expanse",
+        "day": 3
+      },
+      "Xi Expanse Station": {
+        "price": 50,
+        "system": "Xi Expanse",
+        "day": 3
+      }
+    }
+  },
+  "4040146022": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "1453970007": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 17,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 16,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 19,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 15,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 10,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 7,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 10,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 8,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 8,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 8,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 22,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 7,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 6,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 13,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 16,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 38,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 26,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 23,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 55,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 41,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 14,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 48,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 45,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 32,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 34,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 27,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 26,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 24,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 13,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 26,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 21,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 33,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 35,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 24,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 32,
+        "system": "Rho Point",
+        "day": 22
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Eos Calyx": {
+        "price": 52,
+        "system": "Nu Drift",
+        "day": 3
+      },
+      "Eos Gorn": {
+        "price": 50,
+        "system": "Chi VI",
+        "day": 17
+      },
+      "Refuge Lyrae": {
+        "price": 52,
+        "system": "Chi VI",
+        "day": 6
+      },
+      "Tauri Nova": {
+        "price": 48,
+        "system": "Omega Major",
+        "day": 19
+      },
+      "Centauri Eridani": {
+        "price": 51,
+        "system": "Rho Point",
+        "day": 22
+      }
+    }
+  },
+  "4283304470": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 8,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 14,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 15,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 15,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 15,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 15,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 6,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 6,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 9,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 7,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 7,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 7,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 17,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 6,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 15,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 13,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 16,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 16,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 39,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 33,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 53,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 53,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 53,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 48,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 49,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 47,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 50,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 31,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 31,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 29,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 25,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 24,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 34,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 15,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 16,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 14,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 50,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 34,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 42,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 25,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 25,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 27,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Duren Frontier": {
+        "price": 52,
+        "system": "Zeta V",
+        "day": 5
+      },
+      "Bastion Verge": {
+        "price": 52,
+        "system": "Psi VI",
+        "day": 7
+      },
+      "Reach Irix": {
+        "price": 49,
+        "system": "Lambda Minor",
+        "day": 9
+      },
+      "Iota Gate Nexus": {
+        "price": 52,
+        "system": "Iota Gate",
+        "day": 10
+      },
+      "Iota Gate Waypoint": {
+        "price": 52,
+        "system": "Iota Gate",
+        "day": 11
+      },
+      "Ferin Bastion": {
+        "price": 48,
+        "system": "Iota Gate",
+        "day": 11
+      }
+    }
+  },
+  "449877165": {
+    "Food": {
+      "Earth Orbital": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 13,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 14,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 16,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 10,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 15,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Water": {
+      "Earth Orbital": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 9,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 7,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 10,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 3,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 9,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Ore": {
+      "Earth Orbital": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 16,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 17,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 21,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 14,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 8,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Rare Minerals": {
+      "Earth Orbital": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 41,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 42,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 39,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 40,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 21,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Machinery": {
+      "Earth Orbital": {
+        "price": 28,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 49,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 47,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 18,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 44,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 47,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Medicine": {
+      "Earth Orbital": {
+        "price": 26,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 37,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 35,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 23,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 27,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 24,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Electronics": {
+      "Earth Orbital": {
+        "price": 36,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 37,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 40,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 19,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 44,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 35,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    },
+    "Luxury Goods": {
+      "Earth Orbital": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      },
+      "Verge Nova": {
+        "price": 49,
+        "system": "Tau Point",
+        "day": 3
+      },
+      "Bastion Lyrae": {
+        "price": 50,
+        "system": "Zeta Secundus",
+        "day": 7
+      },
+      "Calyx Frontier": {
+        "price": 51,
+        "system": "Beta IV",
+        "day": 10
+      },
+      "Ferin Nova": {
+        "price": 51,
+        "system": "Beta Expanse",
+        "day": 12
+      },
+      "Haven Calyx": {
+        "price": 49,
+        "system": "Xi Reach",
+        "day": 25
+      }
+    }
+  },
+  "380805698": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 19,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 8,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 10,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 25,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 28,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 46,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 27,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 37,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 4
+      },
+      "Earth": {
+        "price": 49,
+        "system": "Sol",
+        "day": 4
+      },
+      "Rho Centauri": {
+        "price": 48,
+        "system": "Nu Secundus",
+        "day": 49
+      }
+    }
+  },
+  "2941708500": {
+    "Food": {
+      "Cygni Verge": {
+        "price": 13,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Water": {
+      "Cygni Verge": {
+        "price": 10,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Ore": {
+      "Cygni Verge": {
+        "price": 15,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Rare Minerals": {
+      "Cygni Verge": {
+        "price": 51,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Machinery": {
+      "Cygni Verge": {
+        "price": 34,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Medicine": {
+      "Cygni Verge": {
+        "price": 16,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Electronics": {
+      "Cygni Verge": {
+        "price": 21,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    },
+    "Luxury Goods": {
+      "Cygni Verge": {
+        "price": 51,
+        "system": "Kappa Major",
+        "day": 16
+      }
+    }
   }
 }

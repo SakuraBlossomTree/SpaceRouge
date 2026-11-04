@@ -14,15 +14,16 @@ from core import state
 from render import ui, hud
 from render import title, story, galaxy, system as system_render, jumppoint
 from render import hyperspace, location, market, inventory, messages
-from render import missions, mission_log, gameover, planet, tutorial_panel
+from render import missions, mission_log, gameover, victory, planet, tutorial_panel
+from render import shipyard as shipyard_render
 from render import help as handbook, exchange, radio
 from render import notebook as notebook_render
 from render import pricelog as pricelog_render
 from render import combat as combat_render
 
-MODALS = ("JUMPPOINT", "LOCATION", "MARKET", "MISSIONS")
+MODALS = ("JUMPPOINT", "LOCATION", "MARKET", "MISSIONS", "SHIPYARD")
 OVERLAYS = ("INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE", "RADIO", "NOTEBOOK", "PRICELOG")
-FULLSCREEN = ("TITLE", "STORY", "GAME_OVER")
+FULLSCREEN = ("TITLE", "STORY", "GAME_OVER", "VICTORY")
 
 
 def _viewport_title(gs):
@@ -63,6 +64,7 @@ def _draw_view(con, gs, stars, depth=0):
             "LOCATION": lambda: location.draw(con, W, H),
             "MARKET": lambda: market.draw(con, W, H),
             "MISSIONS": lambda: missions.draw(con, W, H),
+            "SHIPYARD": lambda: shipyard_render.draw(con, W, H),
         }[gs]()
     elif gs in OVERLAYS:
         base = state.overlay_return or "SYSTEM"
@@ -111,6 +113,9 @@ def _compose(console, map_con, stars, title_text, story_text):
         return
     if gs == "GAME_OVER":
         gameover.draw(console, ui.SCREEN_W, ui.SCREEN_H)
+        return
+    if gs == "VICTORY":
+        victory.draw(console, ui.SCREEN_W, ui.SCREEN_H)
         return
 
     map_con.clear(bg=ui.BG)

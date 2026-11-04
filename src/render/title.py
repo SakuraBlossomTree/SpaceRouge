@@ -61,12 +61,11 @@ def draw(console, width, height, title_text):
             fg = ui.scale_color(ui.lerp_color(LOGO_TOP, LOGO_BOTTOM, k), shimmer)
             console.print(lx + j, ly + i, ch, fg=fg, bg=ui.BG)
 
-    tag = "A TRADER'S ROGUELIKE  ·  250,000 CREDITS IN DEBT  ·  ONE SHIP"
+    tag = "A TRADER'S ROGUELIKE  ·  75,000 CREDITS IN DEBT  ·  ONE SHIP"
     ui.center(console, width // 2, ly + len(lines) + 1, tag, fg=ui.DIM, bg=ui.BG)
 
     # menu box
-    from core import travel
-    bw, bh = 54, 16
+    bw, bh = 54, 13
     bx, by = (width - bw) // 2, ly + len(lines) + 5
     panel = (10, 14, 28)
     ui.frame(console, bx, by, bw, bh, fg=ui.BORDER, bg=panel)
@@ -74,44 +73,30 @@ def draw(console, width, height, title_text):
     ui.center(console, width // 2, by + 2, "►  NEW GAME  ◄",
               fg=ui.scale_color(ui.KEY, pulse), bg=panel)
 
-    # difficulty: G or ←→ switches
-    mode = travel.difficulty()
-    x = width // 2 - 19
-    console.print(x, by + 4, "Difficulty", fg=ui.DIM, bg=panel)
-    x += 12
-    for name, colour in (("easy", ui.GOOD), ("hard", ui.BAD)):
-        on = name == mode
-        label = f" {name.upper()} "
-        console.print(x, by + 4, label, fg=(0, 0, 0) if on else ui.FAINT,
-                      bg=colour if on else panel)
-        x += len(label) + 1
-    ui.key_hint(console, x + 1, by + 4, "G", "change", bg=panel)
-    ui.center(console, width // 2, by + 5, travel.DIFFICULTY_INFO[mode], fg=ui.DIM, bg=panel)
-
-    ui.hint_row_centered(console, width // 2, by + 7,
+    ui.hint_row_centered(console, width // 2, by + 4,
                          [("ENTER", "Start"), ("F11", "Fullscreen"), ("Q", "Quit")],
                          bg=panel)
     on = tutorial.enabled()
-    ui.hint_row_centered(console, width // 2, by + 9,
+    ui.hint_row_centered(console, width // 2, by + 6,
                          [("T", f"Tutorial: {'ON ' if on else 'OFF'}"),
                           ("F10", f"Font: {fonts.current_name()}")],
                          bg=panel)
 
     # galaxy seed: S to type one, L to replay last run's galaxy
-    ui.hline(console, bx, by + 11, bw, fg=ui.BORDER, bg=panel)
+    ui.hline(console, bx, by + 8, bw, fg=ui.BORDER, bg=panel)
     if state.seed_input is not None:
         cursor = "█" if int(t * 2) % 2 == 0 else " "
-        ui.center(console, width // 2, by + 12, f"Seed: {state.seed_input}{cursor}",
+        ui.center(console, width // 2, by + 9, f"Seed: {state.seed_input}{cursor}",
                   fg=ui.KEY, bg=panel)
-        ui.hint_row_centered(console, width // 2, by + 14,
+        ui.hint_row_centered(console, width // 2, by + 11,
                              [("0-9", "Type"), ("ENTER", "Load"), ("ESC", "Cancel")], bg=panel)
     else:
-        ui.center(console, width // 2, by + 12, f"Galaxy seed {state.galaxy_seed}",
+        ui.center(console, width // 2, by + 9, f"Galaxy seed {state.galaxy_seed}",
                   fg=ui.DIM, bg=panel)
         hints = [("S", "Enter seed")]
         if state.last_seed is not None and state.last_seed != state.galaxy_seed:
             hints.append(("L", f"Last galaxy ({state.last_seed})"))
-        ui.hint_row_centered(console, width // 2, by + 14, hints, bg=panel)
+        ui.hint_row_centered(console, width // 2, by + 11, hints, bg=panel)
 
     from core import audio
     muted = audio.music_muted()

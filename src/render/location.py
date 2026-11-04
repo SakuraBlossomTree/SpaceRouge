@@ -11,9 +11,10 @@ LOCATION_ITEMS = [
     ("3", "Missions Board", "missions"),
     ("4", "Bar", "bar"),
     ("5", "Refuel", "refuel"),
+    ("6", "Pay Debt", "debt"),
 ]
 
-W, H = 54, 21
+W, H = 54, 23
 
 
 def item_status(action):
@@ -41,7 +42,28 @@ def item_status(action):
         cost = need * price
         fg = ui.GOOD if state.credits >= cost else ui.BAD
         return True, f"{ui.fmt_int(cost)} cr ({price}/u)", fg
+    if action == "shipyard":
+        from core import shipyard
+        n = shipyard.available_count()
+        return True, f"{n} upgrade{'s' if n != 1 else ''}" if n else "fully fitted", ui.DIM
+    if action == "debt":
+        if state.debt <= 0:
+            return False, "paid off", ui.FAINT
+        return True, f"{ui.fmt_int(state.debt)} cr owed", ui.WARN
     return False, "closed", ui.FAINT
+
+
+def _draw_debt(console, ix, iw, y):
+    """The amount panel that replaces the menu while paying the loan."""
+    ui.text(console, ix, y + 7, "PAY DOWN YOUR LOAN", fg=ui.KEY)
+    ui.kv(console, ix, y + 9, iw, "Debt remaining", f"{ui.fmt_int(state.debt)} cr", value_fg=ui.TEXT)
+    ui.kv(console, ix, y + 10, iw, "Your credits", ui.fmt_int(state.credits), value_fg=ui.KEY)
+    ui.text(console, ix, y + 12, "Pay:", fg=ui.DIM)
+    ui.text(console, ix + 6, y + 12, (state.debt_input or "") + "_", fg=ui.KEY)
+    left = max(0, state.loan_deadline_day - state.day)
+    ui.kv(console, ix, y + 14, iw, "Deadline",
+          f"Day {state.loan_deadline_day} ({left} days left)",
+          value_fg=ui.BAD if left <= 7 else (ui.WARN if left <= 30 else ui.TEXT))
 
 
 def station_tabs(console, x, y, w):
@@ -76,16 +98,22 @@ def draw(console, width, height=ui.MAP_H):
     ui.text(console, ix, y + 3, "Docking clamps engaged. Welcome, pilot.", fg=ui.DIM)
     ui.hline(console, x, y + 5, W, fg=ui.BORDER_HI)
 
-    for i, (key, label, action) in enumerate(LOCATION_ITEMS):
-        enabled, suffix, sfg = item_status(action)
-        ui.menu_row(console, ix - 1, y + 7 + i * 2, iw + 2, label,
-                    selected=(i == state.location_index), key=key,
-                    enabled=enabled, suffix=suffix, suffix_fg=sfg)
+    if state.debt_input is not None:
+        _draw_debt(console, ix, iw, y)
+    else:
+        for i, (key, label, action) in enumerate(LOCATION_ITEMS):
+            enabled, suffix, sfg = item_status(action)
+            ui.menu_row(console, ix - 1, y + 7 + i * 2, iw + 2, label,
+                        selected=(i == state.location_index), key=key,
+                        enabled=enabled, suffix=suffix, suffix_fg=sfg)
 
     ui.hline(console, x, y + H - 4, W, fg=ui.BORDER_HI)
     ui.kv(console, ix, y + H - 3, 20, "Credits", ui.fmt_int(state.credits), value_fg=ui.KEY)
     ui.kv(console, ix + iw - 18, y + H - 3, 18, "Fuel",
           f"{state.fuel:.0f}/{state.max_fuel:.0f}",
           value_fg=ui.ratio_color(state.fuel / state.max_fuel))
-    ui.hint_row_centered(console, x + W // 2, y + H - 1,
-                         [("↑↓", "Select"), ("ENTER", "Open"), ("TAB", "Next"), ("ESC", "Undock")])
+    if state.debt_input is not None:
+        hints = [("0-9", "Amount"), ("M", "Max"), ("ENTER", "Pay"), ("ESC", "Cancel")]
+    else:
+        hints = [("↑↓", "Select"), ("ENTER", "Open"), ("TAB", "Next"), ("ESC", "Undock")]
+    ui.hint_row_centered(console, x + W // 2, y + H - 1, hints)

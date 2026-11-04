@@ -51,7 +51,7 @@ current_location = None
 current_planet = None
 pending_destination = None
 pending_origin = None
-starting_debt = 250000
+starting_debt = 5000
 
 hyperspace_stage = 0
 hyperspace_timer = 0.0
@@ -76,6 +76,8 @@ last_seen_by = None
 missions = []
 visible_missions = []
 selected_mission_index = 0
+completed_mission_keys = set()
+cost_basis = {}                  # good -> [units, credits paid] for goods you bought to trade   # contracts finished this galaxy; never reposted
 
 # --- Messages -----------------------------------------------------------------
 
@@ -121,13 +123,14 @@ day = 1
 move_counter = 0
 
 # this is debt mechanic if the player wants to win the game he has to remove the debt entirely
-debt = 250000
-weekly_payment = 1000
-missed_payments = 0
-next_payment_day = 14 # first payment due on day 14
+debt = starting_debt     # no instalments: it only goes down when the player pays
+loan_deadline_day = 31  # lender repossesses the ship on this day (1 + 365 days) if debt is left
 
 # this is the game over screen
 game_over_reason = ""
+upgrades = {}               # shipyard upgrade levels (the scanner is market_scanner)
+shipyard_index = 0
+victory_seen = False     # the loan-paid-off screen has been shown (and dismissed)
 
 # This tracks the story index
 story_index = 0
@@ -152,6 +155,7 @@ quit_confirm = False
 # Notebook (J): selected note, text being typed (None = not typing)
 note_index = 0
 note_input = None
+debt_input = None          # text typed on the Pay Debt panel (None = panel closed)
 
 # Price log (K): selected commodity row
 pricelog_index = 0
@@ -179,7 +183,7 @@ help_page = 0
 economy = None
 exchange_tab = 0
 exchange_index = 0
-market_scanner = False    # long-range scanner upgrade; False = local prices only
+market_scanner = True     # Exchange market scanner: fitted free at the start
 galaxy_routes = False     # R on the galaxy chart: show trade-route heat
 
 # --- Seeds -------------------------------------------------------------------------

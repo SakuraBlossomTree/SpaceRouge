@@ -32,8 +32,8 @@ BASE_PRICES = {
 }
 
 # --- Archetypes --------------------------------------------------------------
-# exports  → produced here, sold cheap (0.6x base price)
-# imports  → needed here, bought expensive (1.5x base price)
+# exports  → produced here, sold cheap (0.55x base price)
+# imports  → needed here, bought expensive (1.65x base price)
 # neutral  → available at base price
 # Military systems have no market at all
  
@@ -219,12 +219,12 @@ def _generate_market(archetype_name, seq):
         if commodity in archetype["exports"]:
             # Produced here — sell cheap, with small random variation
             variation = (seq.next_seed() % 5) - 2   # -2 to +2
-            market[commodity] = max(1, int(base * 0.6) + variation)
+            market[commodity] = max(1, int(base * 0.55) + variation)
  
         elif commodity in archetype["imports"]:
             # Needed here — buy expensive
             variation = (seq.next_seed() % 7) - 3   # -3 to +3
-            market[commodity] = int(base * 1.5) + variation
+            market[commodity] = int(base * 1.65) + variation
  
         else:
             # Neutral — base price with small variation
@@ -415,7 +415,8 @@ def _wire_jump_points(stars, master_seq):
         # Add A -> B
         used_a = _used_positions(a_star.system)
         x, y = _free_pos(master_seq, used_a)
-        cost = 10 + master_seq.next_seed() % 41
+        master_seq.next_seed()   # was the gate toll: still drawn so galaxies stay the same
+        cost = 0            # gates have no toll; the fuel is the price
         a_star.system.jump_points.append(
             JumpPoint(x, y, f"{a_name} -> {b_name}", a_name, b_name, cost)
         )
@@ -467,7 +468,8 @@ def _connect_components(stars, master_seq):
                     if best is None or d < best[0]:
                         best = (d, a, b)
         _, a, b = best
-        cost = 10 + master_seq.next_seed() % 41
+        master_seq.next_seed()   # was the gate toll: still drawn so galaxies stay the same
+        cost = 0            # gates have no toll; the fuel is the price
         x, y = _free_pos(master_seq, _used_positions(a.system))
         a.system.jump_points.append(
             JumpPoint(x, y, f"{a.name} -> {b.name}", a.name, b.name, cost))
@@ -587,3 +589,12 @@ def generate_hub(seed):
                 break
 
     return hub
+
+# Stations buy your goods at a discount to their listed price. Without it,
+# two markets in one system with a tiny price gap would be free money.
+SELL_SPREAD = 0.10
+
+
+def sell_price(price):
+    """What a station pays you for one unit that is listed at `price`."""
+    return max(1, int(round(price * (1 - SELL_SPREAD))))

@@ -49,6 +49,9 @@ def compose(console, stars, title_text, story_text):
         combat_render.draw(console, WIDTH, HEIGHT)
     elif gs == "GAME_OVER":
         gameover.draw(console, WIDTH, HEIGHT)
+    elif gs == "VICTORY":
+        from render_classic import victory
+        victory.draw(console, WIDTH, HEIGHT)
     elif gs == "HELP":
         handbook.draw(console, WIDTH, HEIGHT)
     elif gs == "EXCHANGE":

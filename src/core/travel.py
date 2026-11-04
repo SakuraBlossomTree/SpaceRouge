@@ -1,45 +1,33 @@
 """Getting around: flying inside a system, autopilot, and fuel.
 
-Two difficulties (chosen on the title screen, G):
+Flying inside a system is free. Fuel is only burned by jump gates, and every
+gate always costs the same: 3 + (distance between the stars) / 3, so a typical
+jump is 7-10 fuel and a full tank lasts about a dozen jumps.
 
-EASY  Flying inside a system is free. Fuel is only burned by jump gates, and
-      every gate always costs the same: 3 + (distance between the stars) / 3,
-      so a typical jump is 7-10 fuel and a full tank lasts about a dozen jumps.
-
-HARD  The original rules: every move burns about 1 fuel (more with cargo, a
-      damaged hull, in dense systems or with big debt, plus a little random
-      variance), 50 moves make a day, and running dry is game over. Jumps
-      themselves need no fuel.
+(The old Hard difficulty lives on in core/hard_mode.py.)
 """
 
 import math
-import random
 import time
 
-from core import state, fonts
-from core.world import FUEL_PRICES, FUEL_CONSUMPTION_MODIFIERS
+from core import state
+from core.world import FUEL_PRICES
 
-DIFFICULTIES = ("easy", "hard")
-DIFFICULTY_INFO = {
-    "easy": "Flying is free; only jump gates burn fuel.",
-    "hard": "Every move burns fuel; 50 moves make a day.",
-}
-
-
-def difficulty():
-    d = fonts.settings().get("difficulty", "easy")
-    return d if d in DIFFICULTIES else "easy"
-
-
-def hard():
-    return difficulty() == "hard"
+def system_autopilot_line(obj):
+    """Scanner line for a planet / station / gate in the system map: what
+    flying there with autopilot takes. The autopilot moves one axis at a time,
+    so the move count is the Manhattan distance."""
+    moves = abs(obj.x - state.system_player_x) + abs(obj.y - state.system_player_y)
+    if moves == 0:
+        return "Autopilot: you are already here"
+    days = (state.move_counter + moves) // MOVES_PER_DAY
+    text = f"Autopilot: {moves} moves, no fuel"
+    if days:
+        text += f", {days} day{'s' if days != 1 else ''}"
+    return text
 
 
-def toggle_difficulty():
-    fonts.settings()["difficulty"] = "easy" if hard() else "hard"
-    fonts.save_settings()
-    return difficulty()
-
+MOVES_PER_DAY = 50         # every this many moves inside a system a day passes
 AUTOPILOT_STEP = 0.03      # seconds per cell while the autopilot flies
 
 
@@ -52,14 +40,43 @@ def _star(name):
 
 
 def jump_fuel(jp):
-    """Fuel a jump gate needs (whole units, always the same for that gate).
-    Hard mode: none - fuel is burned flying instead."""
-    if hard():
-        return 0
+    """Fuel a jump gate needs (whole units, always the same for that gate)."""
     a, b = _star(jp.source), _star(jp.destination)
     if a is None or b is None:
         return 5
+    return gate_fuel(a, b)
+
+
+def gate_fuel(a, b):
+    """Fuel for one jump gate between two star systems (easy-mode rule)."""
     return 3 + round(math.hypot(a.x - b.x, a.y - b.y) / 3)
+
+
+def route_estimate(stars, here, there):
+    """(jumps, fuel) for the fewest-jump gate route from system `here` to
+    `there`, or None if unreachable."""
+    by_name = {s.name: s for s in stars}
+    if here not in by_name or there not in by_name:
+        return None
+    parent = {here: None}
+    frontier = [here]
+    while frontier and there not in parent:
+        nxt = []
+        for name in frontier:
+            for jp in by_name[name].system.jump_points:
+                if jp.destination in by_name and jp.destination not in parent:
+                    parent[jp.destination] = name
+                    nxt.append(jp.destination)
+        frontier = nxt
+    if there not in parent:
+        return None
+    path, cur = [], there
+    while parent[cur] is not None:
+        path.append((parent[cur], cur))
+        cur = parent[cur]
+    jumps = len(path)
+    fuel = sum(gate_fuel(by_name[a], by_name[b]) for a, b in path)
+    return jumps, fuel
 
 
 def refuel_cost():
@@ -74,7 +91,7 @@ def check_stranded():
     """Game over only when there is truly no way out: no gate you have the
     fuel for, no fuel you can buy here, and no cargo left to sell for it."""
     system = state.current_system
-    if system is None or state.game_state == "GAME_OVER" or hard():
+    if system is None or state.game_state == "GAME_OVER":
         return False
     if any(state.fuel >= jump_fuel(jp) for jp in system.jump_points):
         return False
@@ -95,44 +112,17 @@ def check_stranded():
 # Flying
 # ---------------------------------------------------------------------------
 
-def move_fuel():
-    """Hard mode: fuel for one move (the original formula)."""
-    cost = 1.0
-    cost += len(state.inventory.items) * 0.15                     # heavy hold
-    cost += (1.0 - state.player_ship.hull / state.player_ship.max_hull) * 0.3   # damage
-    cost += random.uniform(-0.2, 0.2)                              # variance
-    archetype = getattr(state.current_system, "archetype", None)
-    cost *= FUEL_CONSUMPTION_MODIFIERS.get(archetype, 1.0)         # local conditions
-    if state.debt > 5000:                                          # worn engines
-        cost *= 1.1
-    return max(0.5, cost)
-
-
 def step(dx, dy):
-    """Move the ship one cell. Easy: free. Hard: burns fuel, 50 moves = 1 day,
-    and running out is game over. Returns False if the ship couldn't move."""
-    if not hard():
-        state.system_player_x += dx
-        state.system_player_y += dy
-        return True
-    cost = move_fuel()
-    if state.fuel <= 0 or state.fuel < cost:
-        state.add_message("No fuel!" if state.fuel <= 0 else
-                          f"Need {cost:.1f} fuel, only {state.fuel:.1f} remaining!")
-        state.autopilot = None
-        state.game_over_reason = "You ran out of fuel and drifted into the void."
-        state.game_state = "GAME_OVER"
-        return False
+    """Move the ship one cell. Flying is free, but time still passes:
+    MOVES_PER_DAY moves make a day (rent, prices and the economy move on)."""
     state.system_player_x += dx
     state.system_player_y += dy
-    state.fuel -= cost
     state.move_counter += 1
-    if state.autopilot is None and abs(cost - 1.0) > 1e-9:
-        state.add_message(f"Fuel used: {cost:.1f}")     # (not every autopilot step)
-    if state.move_counter >= 50:
+    if state.move_counter >= MOVES_PER_DAY:
         state.move_counter = 0
-        from core.debt import advance_day
+        from core.debt import advance_day, check_deadline
         advance_day()
+        check_deadline()
     return True
 
 

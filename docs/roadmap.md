@@ -181,12 +181,6 @@
 
 # Current Focus
 
-1. Improve Sector Map
-2. Add Travel Costs
-3. Add Jump Gates
-4. Add Message Log
-5. Add First Mission
-
 Do NOT work on:
 - Combat
 - Infinite Generation

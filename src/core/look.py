@@ -35,7 +35,8 @@ def draw_result(console, height, look_object):
 
     elif hasattr(look_object, "destination"):  # JumpPoint
         console.print(1, height - 3, f"Jump Point -> {look_object.destination}")
-        console.print(1, height - 2, f"Cost: {look_object.cost} credits")
+        from core import travel
+        console.print(1, height - 2, f"Fuel: {travel.jump_fuel(look_object)}")
 
     elif hasattr(look_object, "system"):  # Star (galaxy screen)
         console.print(1, height - 3, f"Star: {look_object.name}")

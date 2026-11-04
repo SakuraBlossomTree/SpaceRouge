@@ -3,7 +3,7 @@
 The Exchange deliberately has no company, stock or galaxy-wide price data.
 A long-range market scanner is required to compare systems; it is a ship
 upgrade, not fitted at the start. Without it only the market you are docked
-at is visible. With it, markets within core.economy.SCAN_DEPTH jumps are
+at is visible. With it, markets within core.economy.scan_depth() jumps are
 shown, with each good marked cheap or dear against the regional average.
 Flying somewhere new is how you discover new prices.
 
@@ -14,7 +14,7 @@ scanner; replace it with a real purchase/installation path.
 """
 
 from core import state
-from core.economy import PRICE_BAND, SCAN_DEPTH, price_band
+from core.economy import PRICE_BAND, scan_depth, price_band
 from core.world import COMMODITIES
 from render import ui
 
@@ -98,10 +98,15 @@ def tab_count(tab):
     return 0
 
 
+def _scan_range():
+    n = scan_depth()
+    return f"{n} jump{'s' if n != 1 else ''}"
+
+
 def _scanner_locked(console, ix, iw, y, bottom, heading, detail):
     """Explain what the missing long-range scanner would unlock."""
     lines = ui.wrap(detail, iw)
-    height = 7 + len(lines) + (2 if state.DEBUG else 0)
+    height = 7 + len(lines)
     top = y + max(0, (bottom - y - height) // 2)
     ui.text(console, ix, top, "LONG-RANGE MARKET SCANNER REQUIRED", fg=ui.WARN)
     ui.text(console, ix, top + 2, heading, fg=ui.TITLE)
@@ -110,9 +115,8 @@ def _scanner_locked(console, ix, iw, y, bottom, heading, detail):
     note_y = top + 4 + len(lines) + 1
     ui.text(console, ix, note_y,
             "The Exchange currently shows local prices only.", fg=ui.DIM)
-    if state.DEBUG:
-        ui.text(console, ix, note_y + 2,
-                "DEBUG: press U to install the scanner.", fg=ui.ACCENT)
+    ui.text(console, ix, note_y + 1,
+            "Buy a Market Scanner at a shipyard (2) when docked.", fg=ui.ACCENT)
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +139,7 @@ def _overview(console, ec, x, y, ix, iw, bottom):
         if archetype:
             ui.text(console, ix + 10 + len(start), y, f"· {archetype}", fg=ui.DIM)
     ui.right(console, ix + iw - 1, y,
-             f"SCAN RANGE {SCAN_DEPTH} JUMPS" if upgraded else "LOCAL FEED",
+             f"SCAN RANGE {_scan_range().upper()}" if upgraded else "LOCAL FEED",
              fg=ui.ACCENT if upgraded else ui.WARN)
 
     if docked:
@@ -205,7 +209,7 @@ def _overview(console, ec, x, y, ix, iw, bottom):
     ui.hline(console, x, dy - 1, W, fg=ui.BORDER_HI)
     if upgraded:
         ui.text(console, ix, dy, "BEST NEARBY TRADES", fg=ui.TITLE)
-        ui.right(console, ix + iw - 1, dy, f"within {SCAN_DEPTH} jumps", fg=ui.FAINT)
+        ui.right(console, ix + iw - 1, dy, f"within {_scan_range()}", fg=ui.FAINT)
         ui.text(console, ix, dy + 1, "GOOD", fg=ui.DIM)
         ui.text(console, ix + 14, dy + 1, "BUY", fg=ui.DIM)
         ui.text(console, ix + 35, dy + 1, "SELL", fg=ui.DIM)
@@ -230,17 +234,16 @@ def _overview(console, ec, x, y, ix, iw, bottom):
     else:
         ui.text(console, ix, dy, "LONG-RANGE MARKET SCANNER", fg=ui.TITLE)
         ui.right(console, ix + iw - 1, dy, "NOT INSTALLED", fg=ui.WARN)
-        detail = ("Compare every market within {SCAN_DEPTH} jumps, see which goods are "
+        detail = (f"Compare every market within {_scan_range()}, see which goods are "
                   "cheap or dear, and find the best nearby trade.")
         lines = ui.wrap(detail, iw)
         for i, line in enumerate(lines):
             ui.text(console, ix, dy + 2 + i, line, fg=ui.TEXT)
         ui.text(console, ix, dy + 2 + len(lines) + 1,
                 "Dock at a market to see its local prices.", fg=ui.DIM)
-        if state.DEBUG:
-            ui.text(console, ix, dy + 2 + len(lines) + 2,
-                    "DEBUG: press U to install the scanner.", fg=ui.ACCENT)
-        ny = dy + 2 + len(lines) + 4
+        ui.text(console, ix, dy + 2 + len(lines) + 2,
+                "Buy a Market Scanner at a shipyard (2) when docked.", fg=ui.ACCENT)
+        ny = dy + 2 + len(lines) + 5
 
     # --- explanation (anchored to the bottom of the panel) -----------------
     hy = max(ny + 6, bottom - 5)
@@ -277,12 +280,12 @@ def _overview(console, ec, x, y, ix, iw, bottom):
     if upgraded:
         ui.text(console, ix, hy + 1,
                 ui.clip(f"▼ cheap = at least {PRICE_BAND * 100:.0f}% below the "
-                        f"{SCAN_DEPTH}-jump regional average.", iw), fg=ui.DIM)
+                        f"{scan_depth()}-jump regional average.", iw), fg=ui.DIM)
         ui.text(console, ix, hy + 2,
                 ui.clip(f"▲ dear = at least {PRICE_BAND * 100:.0f}% above it. "
                         "Buy low here, sell high there.", iw), fg=ui.DIM)
         ui.text(console, ix, bottom - 1,
-                ui.clip(f"Only markets within {SCAN_DEPTH} jumps are shown. Fly on "
+                ui.clip(f"Only markets within {_scan_range()} are shown. Fly on "
                         "to reveal new prices.", iw), fg=ui.FAINT)
     else:
         ui.text(console, ix, hy + 1,
@@ -300,7 +303,7 @@ def _markets(console, ec, x, y, ix, iw, bottom):
     if not state.market_scanner:
         _scanner_locked(
             console, ix, iw, y, bottom, "NEARBY MARKETS",
-            "Scan every market within {SCAN_DEPTH} jumps, compare their prices at a "
+            f"Scan every market within {_scan_range()}, compare their prices at a "
             "glance, and see which goods are cheap or dear in each system.")
         return
     start = _start_system()
@@ -609,5 +612,5 @@ def draw(console, width, height=ui.MAP_H):
     if tab in (1, 2) and state.market_scanner:
         hints.insert(1, ("↑↓", "Select"))
     if state.DEBUG:
-        hints.extend([("U", "Scanner"), ("F", "+1 day")])
+        hints.append(("F", "+1 day"))
     ui.hint_row_centered(console, x + W // 2, y + H - 2, hints)

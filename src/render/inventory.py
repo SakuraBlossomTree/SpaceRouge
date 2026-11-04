@@ -27,26 +27,27 @@ def draw(console, width, height=ui.MAP_H):
     ui.text(console, ix + 38, y + 5, "SHARE", fg=ui.DIM)
     console.print(ix, y + 6, "─" * iw, fg=ui.BORDER)
 
-    counts = Counter(item.name for item in inv.items)
-    reserved = Counter()
-    for m in state.missions:
-        if m.status == "active" and m.mission_type == "cargo" and m.cargo:
-            reserved[m.cargo] += m.amount
+    trade = Counter(item.name for item in inv.items if not item.mission_key)
+    contract = Counter((item.name, item.origin_system) for item in inv.items
+                       if item.mission_key)
+    rows = [(name, None, n) for name, n in sorted(trade.items())]
+    rows += [(name, origin or "?", n) for (name, origin), n
+             in sorted(contract.items(), key=lambda kv: (kv[0][0], kv[0][1] or ""))]
 
-    if not counts:
+    if not rows:
         ui.text(console, ix, y + 7, "The hold is empty.", fg=ui.DIM)
-    for i, (name, n) in enumerate(sorted(counts.items())):
+    for i, (name, origin, n) in enumerate(rows):
         ry = y + 7 + i
         if ry >= y + 21:
             break
         space = ITEMS[name].size * n if name in ITEMS else n
-        ui.text(console, ix, ry, name, fg=ui.TEXT)
-        if reserved.get(name):
-            ui.text(console, ix + len(name) + 1, ry, f"({min(n, reserved[name])} contract)",
-                    fg=ui.KEY)
+        if origin is None:
+            ui.text(console, ix, ry, name, fg=ui.TEXT)
+        else:
+            ui.text(console, ix, ry, ui.clip(f"{name} (contract: {origin})", 26), fg=ui.KEY)
         ui.right(console, ix + 27, ry, str(n), fg=ui.TEXT)
         ui.right(console, ix + 35, ry, str(space), fg=ui.DIM)
-        ui.bar(console, ix + 38, ry, iw - 38, space, cap, ui.ACCENT)
+        ui.bar(console, ix + 38, ry, iw - 38, space, cap, ui.KEY if origin else ui.ACCENT)
 
     # --- ship systems ------------------------------------------------------
     ship = state.player_ship

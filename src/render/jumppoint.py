@@ -39,27 +39,14 @@ def draw(console, width, height):
     from core import travel
     need = travel.jump_fuel(jp)
     fuel_ok = state.fuel >= need
-    afford = state.credits >= jp.cost
-    ui.kv(console, ix, y + 12, iw, "Gate toll", f"{jp.cost} cr",
-          value_fg=ui.GOOD if afford else ui.BAD)
-    ui.kv(console, ix, y + 13, iw, "Balance after",
-          f"{ui.fmt_int(state.credits - jp.cost)} cr",
-          value_fg=ui.TEXT if afford else ui.BAD)
-    if travel.hard():
-        ui.kv(console, ix, y + 14, iw, "Jump fuel", "none (Hard: flying burns fuel)",
-              value_fg=ui.DIM)
-    else:
-        ui.kv(console, ix, y + 14, iw, "Jump fuel",
-              f"{need}  (tank {state.fuel:.0f} → {max(0, state.fuel - need):.0f})",
-              value_fg=ui.GOOD if fuel_ok else ui.BAD)
-    ui.kv(console, ix, y + 15, iw, "Travel time", "1 day", value_fg=ui.DIM)
+    ui.kv(console, ix, y + 12, iw, "Jump fuel",
+          f"{need}  (tank {state.fuel:.0f} → {max(0, state.fuel - need):.0f})",
+          value_fg=ui.GOOD if fuel_ok else ui.BAD)
+    ui.kv(console, ix, y + 13, iw, "Travel time", "1 day", value_fg=ui.DIM)
 
-    if afford and fuel_ok:
+    if fuel_ok:
         ui.hint_row_centered(console, x + W // 2, y + H - 2,
                              [("ENTER", "Engage jump"), ("ESC", "Cancel")])
-    elif not fuel_ok:
-        ui.center(console, x + W // 2, y + H - 2, "Not enough fuel - refuel at a station",
-                  fg=ui.BAD)
     else:
-        ui.center(console, x + W // 2, y + H - 2, "Not enough credits for the toll",
+        ui.center(console, x + W // 2, y + H - 2, "Not enough fuel - refuel at a station",
                   fg=ui.BAD)

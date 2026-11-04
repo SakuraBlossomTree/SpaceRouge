@@ -40,7 +40,7 @@ def draw(console, width, height):
           value_fg=ui.KEY, bg=bg)
     ui.kv(console, ix, y + 17, iw, "Debt remaining", f"{ui.fmt_int(state.debt)} cr",
           value_fg=ui.BAD, bg=bg)
-    done = sum(1 for m in state.missions if m.status == "completed")
+    done = len(state.completed_mission_keys)
     ui.kv(console, ix, y + 18, iw, "Contracts completed", done, bg=bg)
     paid = max(0, state.starting_debt - state.debt)
     ui.bar(console, ix, y + 20, iw, paid, state.starting_debt, ui.GOOD, bg=bg)

@@ -4,7 +4,7 @@ from collections import Counter
 
 from core import state
 from core.entities import ITEMS
-from core.world import BASE_PRICES, COMMODITIES
+from core.world import BASE_PRICES, COMMODITIES, sell_price
 from render import ui
 
 W = 66
@@ -21,15 +21,19 @@ def draw(console, width, height=ui.MAP_H):
     if loc is None:
         return
     goods = market_goods()
-    held = Counter(item.name for item in state.inventory.items)
+    held = Counter(item.name for item in state.inventory.items if not item.mission_key)
 
     rows = max(1, len(goods))
-    H = 12 + rows
+    H = 17 + rows
     x, y = ui.window(console, W, H, f"{loc.name} · Trading Post",
                      right_title=state.current_system.archetype)
     from render.location import station_tabs
     station_tabs(console, x, y - 2, W)
     ix, iw = x + 3, W - 6
+    from core import economy
+    days = economy.days_to_update()
+    ui.right(console, ix + iw - 1, y + 1, f"Prices update in {days} day{'s' if days != 1 else ''}",
+             fg=ui.DIM)
 
     # header
     cols = {"name": ix + 1, "price": ix + 22, "trend": ix + 31,
@@ -91,7 +95,7 @@ def draw(console, width, height=ui.MAP_H):
         ui.text(console, ix, dy + 1, name.upper(), fg=ui.TITLE)
         ui.kv(console, ix, dy + 2, 28, "Buy 1 for", f"{price} cr",
               value_fg=ui.GOOD if can_buy else ui.BAD)
-        ui.kv(console, ix, dy + 3, 28, "Sell 1 for", f"{price} cr",
+        ui.kv(console, ix, dy + 3, 28, "Sell 1 for", f"{sell_price(price)} cr",
               value_fg=ui.GOOD if n else ui.FAINT)
         limit = "cargo full" if can_fit == 0 else ("no credits" if can_afford == 0 else "")
         ui.kv(console, ix, dy + 4, 28, "You can buy", f"{can_buy}" + (f" ({limit})" if limit else ""),
@@ -106,6 +110,40 @@ def draw(console, width, height=ui.MAP_H):
                ui.ACCENT if used < cap else ui.WARN)
         ui.kv(console, rx, dy + 4, rw, "In hold", f"{n} {name}",
               value_fg=ui.TEXT if n else ui.FAINT)
+
+        # --- profit information ----------------------------------------
+        ec = state.economy
+        avg = ec.avg_price(name) if ec else BASE_PRICES.get(name, price)
+        here_sell = sell_price(price)
+        basis = state.cost_basis.get(name)
+        cost = basis[1] / basis[0] if basis and basis[0] > 0 and n else None
+        ui.kv(console, ix, dy + 6, 28, "Galaxy average", f"{avg:.0f} cr", value_fg=ui.DIM)
+        ui.kv(console, rx, dy + 6, rw, "You paid (avg)",
+              f"{cost:.0f} cr" if cost is not None else "-",
+              value_fg=ui.TEXT if cost is not None else ui.FAINT)
+        if cost is not None:
+            per = here_sell - cost
+            pfg = ui.GOOD if per >= 0 else ui.BAD
+            ui.kv(console, ix, dy + 7, 28, "Profit / unit here", f"{per:+.0f} cr", value_fg=pfg)
+            ui.kv(console, rx, dy + 7, rw, "Total if sold", f"{per * n:+.0f} cr", value_fg=pfg)
+        else:
+            ui.kv(console, ix, dy + 7, 28, "Profit / unit here", "-", value_fg=ui.FAINT)
+
+        from core import pricelog
+        seen = [e for e in pricelog.for_good(name) if e["place"] != loc.name]
+        if seen:
+            lo, hi = seen[0], seen[-1]
+            gain = sell_price(hi["price"]) - price
+            tail = f"{gain:+d}/unit if bought here"
+            ui.right(console, ix + iw - 1, dy + 8, tail, fg=ui.GOOD if gain > 0 else ui.BAD)
+            ui.text(console, ix, dy + 8, ui.clip(
+                f"Sell best: {hi['price']} cr at {hi['place']} ({hi['system']})",
+                iw - len(tail) - 2), fg=ui.TEXT)
+            ui.text(console, ix, dy + 9, ui.clip(
+                f"Buy cheapest: {lo['price']} cr at {lo['place']} ({lo['system']})", iw), fg=ui.TEXT)
+        else:
+            ui.text(console, ix, dy + 8, "No other markets seen yet - visit more to compare.",
+                    fg=ui.FAINT)
 
     ui.hint_row_centered(console, x + W // 2, y + H - 1,
                          [("↑↓", "Select"), ("→/B", "Buy"), ("←/S", "Sell"),

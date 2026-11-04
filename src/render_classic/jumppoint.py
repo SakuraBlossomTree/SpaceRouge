@@ -25,7 +25,8 @@ def draw(console, width, height):
 
     cost_color = (0, 255, 0)
 
-    if state.current_object.cost > state.credits:
+    from core import travel
+    if state.current_object and state.fuel < travel.jump_fuel(state.current_object):
         cost_color = (255, 0, 0)
 
     title_x = width // 2 - len(title) // 2
@@ -33,7 +34,7 @@ def draw(console, width, height):
     line1 = f"Travel to {destination}"
     line1_x = width // 2 - len(line1) // 2
 
-    cost_text = f"Cost: {state.current_object.cost}"
+    cost_text = f"Fuel: {travel.jump_fuel(state.current_object)}"
     cost_x = width // 2 - len(cost_text) // 2
 
     line2 = "ENTER - Jump"
