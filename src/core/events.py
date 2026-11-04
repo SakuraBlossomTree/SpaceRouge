@@ -4,40 +4,146 @@ import tcod
 import time
 import random
 
-from core import state, audio, entities
+from core import state, audio, entities, galaxy_view, fonts, tutorial
 from core.entities import ITEMS
 from core.missions import generate_missions
 from core.debt import advance_day
 from core.world import FUEL_PRICES
+from core import travel, quickmenu
 from core.save import save
 from core.encounter import check_arrival, check_jump
 
 LOOK_SCREENS = ("SYSTEM", "GALAXY")
 
+OVERLAY_KEYS = {
+    tcod.event.KeySym.I: "INVENTORY",
+    tcod.event.KeySym.L: "MESSAGES",
+    tcod.event.KeySym.P: "MISSION_LOG",
+    tcod.event.KeySym.H: "HELP",
+    tcod.event.KeySym.E: "EXCHANGE",
+    tcod.event.KeySym.O: "RADIO",
+    tcod.event.KeySym.J: "NOTEBOOK",
+    tcod.event.KeySym.K: "PRICELOG",
+}
+NO_OVERLAY_STATES = ("TITLE", "STORY", "HYPERSPACE", "GAME_OVER")
+
+
+def _close_overlay():
+    state.game_state = state.overlay_return or "SYSTEM"
+    state.overlay_return = None
+
 def handle_event(event, story_text, context):
     """Dispatch a KeyDown event to the right handler based on game_state."""
+    # Writing a note: every key (and typed text) goes to the notebook
+    if state.note_input is not None:
+        _note_typing(event)
+        return
+
+    # Mouse wheel zooms the galaxy chart and scrolls the story text
+    if isinstance(event, tcod.event.MouseWheel):
+        if state.game_state == "GALAXY":
+            if event.y > 0:
+                _galaxy_zoom_in()
+            elif event.y < 0:
+                _galaxy_zoom_out()
+        elif state.game_state == "STORY":
+            if event.y > 0:
+                _story_scroll(-STORY_WHEEL_STEP)
+            elif event.y < 0:
+                _story_scroll(STORY_WHEEL_STEP)
+        return
+
     if not isinstance(event, tcod.event.KeyDown):
         return
 
-    # Global hotkey: open inventory from (almost) anywhere
-    if event.sym == tcod.event.KeySym.I and state.game_state != "TITLE":
-        state.previous_state = state.game_state
-        state.game_state = "INVENTORY"
+    # "Quit the game?" box: Y / ENTER quits, anything else cancels
+    if state.quit_confirm:
+        state.quit_confirm = False
+        if event.sym in (tcod.event.KeySym.Y, tcod.event.KeySym.RETURN, tcod.event.KeySym.KP_ENTER):
+            audio.shutdown()
+            raise SystemExit()
         return
 
-    if event.sym == tcod.event.KeySym.L and state.game_state != "TITLE":
-        state.previous_state = state.game_state
-        state.game_state = "MESSAGES"
-        return
-    
-    if event.sym == tcod.event.KeySym.P and state.game_state != "TITLE":
-        state.previous_state = state.game_state
-        state.game_state = "MISSION_LOG"
+    # Quick menu (SPACE): while it's open it gets every key
+    if state.quick_menu:
+        quickmenu.handle(event)
         return
 
-    if event.sym == tcod.event.KeySym.Q:
-        audio.device.stop()
-        raise SystemExit()
+    # F9: switch between the modern and the classic (original) UI
+    if event.sym == tcod.event.KeySym.F9 and state.UI_TOGGLE:
+        mode = fonts.toggle_ui(context)
+        if state.game_state != "TITLE":
+            state.add_message(f"{mode.capitalize()} UI")
+        return
+
+    # F10: cycle fonts (works everywhere, including the title screen)
+    if event.sym == tcod.event.KeySym.F10:
+        name = fonts.cycle(context)
+        if state.game_state != "TITLE":
+            state.add_message(f"Font: {name}")
+        return
+
+    # Tutorial: SPACE continues an info step, T hides / resumes it
+    if event.sym == tcod.event.KeySym.SPACE and tutorial.on_space():
+        return
+    if event.sym == tcod.event.KeySym.SPACE and quickmenu.available():
+        state.look_mode = False
+        quickmenu.open_menu()
+        return
+    if event.sym == tcod.event.KeySym.T:
+        if state.game_state == "TITLE":
+            tutorial.set_enabled(not tutorial.enabled())
+            return
+        if state.game_state not in tutorial.HIDDEN_STATES:
+            tutorial.toggle()
+            return
+
+    # Global overlays: I = cargo, L = comms log, P = contract log, H = handbook.
+    # Pressing the same key again closes it; another overlay key switches.
+    overlay = OVERLAY_KEYS.get(event.sym)
+    if overlay == "EXCHANGE" and state.game_state == "COMBAT":
+        overlay = None          # E is "Escape" on the combat menu
+    if overlay and state.game_state not in NO_OVERLAY_STATES:
+        if state.game_state == overlay:
+            _close_overlay()
+        else:
+            if state.game_state not in OVERLAY_KEYS.values():
+                state.overlay_return = state.game_state
+            state.game_state = overlay
+            state.message_scroll = 0
+        return
+
+    if event.sym == tcod.event.KeySym.Q and state.seed_input is None:
+        if state.game_state == "GAME_OVER":
+            audio.shutdown()
+            raise SystemExit()
+        state.quit_confirm = True
+        return
+
+    # F4: mute / unmute the music
+    if event.sym == tcod.event.KeySym.F4:
+        muted = audio.toggle_music_mute()
+        if state.game_state != "TITLE":
+            state.add_message("Music muted" if muted else "Music on")
+        return
+
+    # Volume: F5/F6 music down/up, F7/F8 sound effects down/up
+    vol_keys = {tcod.event.KeySym.F5: ("music", -0.1), tcod.event.KeySym.F6: ("music", 0.1),
+                tcod.event.KeySym.F7: ("sfx", -0.1), tcod.event.KeySym.F8: ("sfx", 0.1)}
+    if event.sym in vol_keys:
+        channel, step = vol_keys[event.sym]
+        if channel == "music":
+            if audio.music_muted():
+                audio.toggle_music_mute()      # changing the volume unmutes
+            v = audio.set_music_volume(audio.music_volume() + step)
+            label = "Music"
+        else:
+            v = audio.set_sfx_volume(audio.sfx_volume() + step)
+            label = "Sound effects"
+            audio.play_sfx("sfx/NenadSimic - Muffled Distant Explosion.ogg", volume=0.5)
+        if state.game_state != "TITLE":
+            state.add_message(f"{label} volume {round(v * 100)}%")
+        return
     
     if event.sym == tcod.event.KeySym.F11:
         window = context.sdl_window
@@ -51,9 +157,19 @@ def handle_event(event, story_text, context):
         state.day += 1
 
     if event.sym == tcod.event.KeySym.M:
-        if state.game_state not in ("TITLE", "STORY", "HYPERSPACE", "GALAXY"):
-            state.previous_state = state.game_state
+        if state.game_state not in ("TITLE", "STORY", "HYPERSPACE", "GALAXY",
+                                    "GAME_OVER", "COMBAT"):
+            # overlays (cargo, log...) remember the screen under them
+            back = state.game_state
+            if back in OVERLAY_KEYS.values():
+                back = state.overlay_return or "SYSTEM"
+            state.galaxy_return = back
+            state.autopilot = None
             state.game_state = "GALAXY"
+            state.look_mode = False
+            state.galaxy_preview = None
+            if state.current_star:
+                galaxy_view.center_on(state.current_star.x, state.current_star.y)
             return
 
     if event.sym == tcod.event.KeySym.X and state.game_state in LOOK_SCREENS:
@@ -63,11 +179,11 @@ def handle_event(event, story_text, context):
                 state.look_x = state.system_player_x
                 state.look_y = state.system_player_y
             elif state.game_state == "GALAXY":
-                state.look_x = state.player_x
-                state.look_y = state.player_y
+                _galaxy_start_scan()
         return
     
-    if state.look_mode and state.game_state in LOOK_SCREENS:
+    # (the galaxy chart handles its own scan cursor in _galaxy)
+    if state.look_mode and state.game_state == "SYSTEM":
         if event.sym == tcod.event.KeySym.UP:
             state.look_y -= 1
         elif event.sym == tcod.event.KeySym.DOWN:
@@ -78,6 +194,12 @@ def handle_event(event, story_text, context):
             state.look_x += 1
         elif event.sym == tcod.event.KeySym.ESCAPE:
             state.look_mode = False
+        elif event.sym in _key("RETURN", "KP_ENTER"):
+            # fly to the scanned spot
+            state.look_mode = False
+            target = state.look_object
+            name = target.name if target is not None else "the marked spot"
+            travel.start_autopilot(state.look_x, state.look_y, name)
         return
         
     handler = HANDLERS.get(state.game_state)
@@ -85,17 +207,69 @@ def handle_event(event, story_text, context):
         handler(event, story_text)
 
 
+DIGIT_KEYS = {getattr(tcod.event.KeySym, f"{p}{d}"): str(d)
+              for p in ("N", "KP_") for d in range(10)
+              if hasattr(tcod.event.KeySym, f"{p}{d}")}
+
+
 def _title(event, story_text):
-    if event.sym == tcod.event.KeySym.RETURN:
+    from core import newgame
+    sym = event.sym
+
+    # typing a seed
+    if state.seed_input is not None:
+        if sym in DIGIT_KEYS and len(state.seed_input) < 10:
+            state.seed_input += DIGIT_KEYS[sym]
+        elif sym == tcod.event.KeySym.BACKSPACE:
+            state.seed_input = state.seed_input[:-1]
+        elif sym in _key("RETURN", "KP_ENTER"):
+            if state.seed_input:
+                newgame.build_galaxy(int(state.seed_input))
+            state.seed_input = None
+        elif sym == tcod.event.KeySym.ESCAPE:
+            state.seed_input = None
+        return
+
+    if sym == tcod.event.KeySym.RETURN:
         state.game_state = "STORY"
+        state.story_scroll = 0
+        state.story_follow = True
+    elif sym in (tcod.event.KeySym.G, tcod.event.KeySym.LEFT, tcod.event.KeySym.RIGHT):
+        travel.toggle_difficulty()
+    elif sym == tcod.event.KeySym.S:
+        state.seed_input = ""
+    elif sym == tcod.event.KeySym.L and state.last_seed is not None \
+            and state.last_seed != state.galaxy_seed:
+        newgame.build_galaxy(state.last_seed)
+
+
+STORY_LINE_STEP = 1
+STORY_PAGE_STEP = 18
+STORY_WHEEL_STEP = 3
+
+
+def _story_scroll(delta):
+    """Scroll the story text; negative moves up, positive moves down."""
+    state.story_follow = False
+    state.story_scroll = max(0, state.story_scroll + delta)
 
 
 def _story(event, story_text):
-    if event.sym == tcod.event.KeySym.SPACE:
+    sym = event.sym
+    if sym in _key("UP", "PAGEUP"):
+        _story_scroll(-STORY_PAGE_STEP if sym == tcod.event.KeySym.PAGEUP
+                      else -STORY_LINE_STEP)
+    elif sym in _key("DOWN", "PAGEDOWN"):
+        _story_scroll(STORY_PAGE_STEP if sym == tcod.event.KeySym.PAGEDOWN
+                      else STORY_LINE_STEP)
+    elif sym == tcod.event.KeySym.SPACE:
         state.story_char_index = len(story_text)
-    elif event.sym == tcod.event.KeySym.RETURN:
+        state.story_follow = True
+    elif sym == tcod.event.KeySym.RETURN:
         if state.story_char_index >= len(story_text):
             state.story_index += 1
+            state.story_scroll = 0
+            state.story_follow = True
             if state.story_index >= len(state.story_texts):
                 state.game_state = "SYSTEM"
             else:
@@ -103,119 +277,231 @@ def _story(event, story_text):
                 state.last_story_time = 0
 
 
+def _key(*names):
+    """KeySyms by name, skipping any this tcod version doesn't have."""
+    return tuple(getattr(tcod.event.KeySym, n) for n in names
+                 if hasattr(tcod.event.KeySym, n))
+
+
+ZOOM_IN_KEYS = _key("PLUS", "EQUALS", "KP_PLUS")
+ZOOM_OUT_KEYS = _key("MINUS", "KP_MINUS")
+ARROWS = {
+    tcod.event.KeySym.UP: (0, -1),
+    tcod.event.KeySym.DOWN: (0, 1),
+    tcod.event.KeySym.LEFT: (-1, 0),
+    tcod.event.KeySym.RIGHT: (1, 0),
+}
+SCROLL_STEP = 4        # cells per arrow press
+SCROLL_STEP_FAST = 12  # with Shift held
+
+
+def _galaxy_anchor():
+    """Zoom around the scan cursor if it's active, otherwise the screen centre."""
+    if state.look_mode:
+        return (state.look_x, state.look_y)
+    return None
+
+
+def _galaxy_zoom_in():
+    """Zoom in; at the closest zoom, zoom 'into' a star = its system preview."""
+    if state.galaxy_preview:
+        return
+    if state.galaxy_zoom == 0:
+        from render.galaxy import preview_target
+        star = preview_target(state.stars)
+        if star is not None:
+            _open_preview(star)
+        return
+    galaxy_view.zoom(1, _galaxy_anchor())
+
+
+def _galaxy_zoom_out():
+    if state.galaxy_preview:
+        _close_preview()
+        return
+    galaxy_view.zoom(-1, _galaxy_anchor())
+
+
+def _open_preview(star):
+    state.galaxy_preview = star.name
+    state.look_x, state.look_y = star.x, star.y
+
+
+def _close_preview():
+    """Back to the chart at x2, centred on the star we were looking at."""
+    star = next((s for s in state.stars if s.name == state.galaxy_preview), None)
+    state.galaxy_preview = None
+    if star is not None:
+        galaxy_view.set_zoom(0)
+        galaxy_view.center_on(star.x, star.y)
+        if state.look_mode:
+            state.look_x, state.look_y = star.x, star.y
+
+
+def _preview_step(step):
+    """Previous / next system in the preview (nearest-first from you)."""
+    origin = state.current_star or (state.stars[0] if state.stars else None)
+    if origin is None:
+        return
+    order = sorted(state.stars, key=lambda st: (st.x - origin.x) ** 2 + (st.y - origin.y) ** 2)
+    names = [s.name for s in order]
+    i = names.index(state.galaxy_preview) if state.galaxy_preview in names else -1
+    _open_preview(order[(i + step) % len(order)])
+
+
+def _galaxy_preview_keys(sym, shift):
+    """Keys while the system preview is open. Returns True if handled."""
+    K = tcod.event.KeySym
+    if sym in ZOOM_OUT_KEYS or sym in (K.ESCAPE, K.X, K.Z, K.BACKSPACE):
+        _close_preview()
+    elif sym == K.TAB:
+        _preview_step(-1 if shift else 1)
+    elif sym in (K.RIGHT, K.DOWN):
+        _preview_step(1)
+    elif sym in (K.LEFT, K.UP):
+        _preview_step(-1)
+    elif sym in _key("C", "HOME"):
+        if state.current_star:
+            _open_preview(state.current_star)
+    elif sym == K.M:
+        state.galaxy_preview = None
+        return False          # let M close the chart as usual
+    return True
+
+
+def _galaxy_start_scan():
+    state.look_mode = True
+    if state.current_star:
+        sx, sy = galaxy_view.project(state.current_star.x, state.current_star.y)
+        if galaxy_view.on_screen(sx, sy):
+            state.look_x, state.look_y = state.current_star.x, state.current_star.y
+            return
+    state.look_x, state.look_y = state.galaxy_cam_x, state.galaxy_cam_y
+
+
+def _galaxy_snap_cursor():
+    """Snap the cursor onto the cell grid so it moves one cell per press."""
+    sx, sy = galaxy_view.project(state.look_x, state.look_y)
+    state.look_x, state.look_y = galaxy_view.unproject(sx, sy)
+
+
+# screens the galaxy chart can return to (everything else: back to the system)
+RETURNABLE = ("SYSTEM", "LOCATION", "MARKET", "MISSIONS", "JUMPPOINT",
+              "INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE", "RADIO", "NOTEBOOK", "PRICELOG")
+
+
 def _galaxy(event, story_text):
-    if event.sym == tcod.event.KeySym.ESCAPE or event.sym == tcod.event.KeySym.M:
-        state.game_state = "SYSTEM"
+    sym = event.sym
+    shift = bool(getattr(event, "mod", 0) & tcod.event.Modifier.SHIFT)
 
+    if state.galaxy_preview and _galaxy_preview_keys(sym, shift):
+        return
 
-def _calculate_fuel_consumption():
-    """Calculate fuel consumption based on multiple factors for realistic simulation."""
-    base_consumption = 1.0
-    
-    # Factor 1: Cargo weight - heavier cargo increases consumption
-    cargo_weight = len(state.inventory.items) * 0.15
-    if cargo_weight > 0:
-        base_consumption += cargo_weight
-    
-    # Factor 2: Ship condition - damaged hull increases drag/inefficiency
-    hull_damage_ratio = 1.0 - (state.player_ship.hull / state.player_ship.max_hull)
-    damage_penalty = hull_damage_ratio * 0.3
-    base_consumption += damage_penalty
-    
-    # Factor 3: Random variance (±0.2) for unpredictability
-    variance = random.uniform(-0.2, 0.2)
-    base_consumption += variance
-    
-    # Factor 4: System archetype affects local space conditions
-    archetype_efficiency = {
-        "Nebula": 1.3,      # Dense gas clouds increase resistance
-        "Cluster": 1.1,     # Crowded stars require more navigation
-        "Void": 0.9,        # Empty space is more efficient
-        "Core": 1.4,        # High gravity wells near core
-        "Rim": 0.85,        # Outer rim has less interference
-    }
-    system_modifier = archetype_efficiency.get(state.current_system.archetype, 1.0)
-    base_consumption *= system_modifier
-    
-    # Factor 5: Debt pressure - high debt means less maintained engines
-    if state.debt > 5000:
-        base_consumption *= 1.1
-    elif state.debt > 10000:
-        base_consumption *= 1.2
-    
-    # Ensure minimum consumption is at least 0.5
-    return max(0.5, base_consumption)
+    if sym == tcod.event.KeySym.ESCAPE:
+        if state.look_mode:
+            state.look_mode = False
+            return
+        sym = tcod.event.KeySym.M
+    if sym == tcod.event.KeySym.M:
+        state.look_mode = False
+        state.mission_nav_target = None
+        state.galaxy_preview = None
+        back = state.galaxy_return
+        state.galaxy_return = None
+        state.game_state = back if back in RETURNABLE else "SYSTEM"
+        return
+
+    # ENTER on a scanned star: open its system preview
+    if sym in _key("RETURN", "KP_ENTER") and state.look_mode:
+        from render.galaxy import preview_target
+        star = preview_target(state.stars)
+        if star is not None:
+            _open_preview(star)
+        return
+
+    # zoom (zooming in past x2 opens the system preview)
+    if sym in ZOOM_IN_KEYS:
+        _galaxy_zoom_in()
+        return
+    if sym in ZOOM_OUT_KEYS:
+        _galaxy_zoom_out()
+        return
+    if sym == tcod.event.KeySym.Z:
+        # cycle: full -> wide -> x1 -> x2 -> full ...
+        nxt = (state.galaxy_zoom - 1) % len(galaxy_view.ZOOMS)
+        galaxy_view.set_zoom(nxt, _galaxy_anchor())
+        return
+
+    if sym == tcod.event.KeySym.N:
+        state.galaxy_minimap = not state.galaxy_minimap
+        return
+    if sym == tcod.event.KeySym.R:
+        state.galaxy_routes = not state.galaxy_routes
+        return
+
+    # recentre on your ship
+    if sym in _key("C", "HOME"):
+        if state.current_star:
+            galaxy_view.center_on(state.current_star.x, state.current_star.y)
+            if state.look_mode:
+                state.look_x, state.look_y = state.current_star.x, state.current_star.y
+        return
+
+    # TAB: hop the scan cursor between stars, nearest to your position first
+    if sym == tcod.event.KeySym.TAB:
+        origin = state.current_star or (state.stars[0] if state.stars else None)
+        if origin is None:
+            return
+        order = sorted(state.stars, key=lambda st: (st.x - origin.x) ** 2 + (st.y - origin.y) ** 2)
+        state.galaxy_tab_index = (state.galaxy_tab_index + (-1 if shift else 1)) % len(order)
+        target = order[state.galaxy_tab_index]
+        state.look_mode = True
+        state.look_x, state.look_y = target.x, target.y
+        galaxy_view.follow(target.x, target.y, margin=10)
+        return
+
+    if sym in ARROWS:
+        dx, dy = ARROWS[sym]
+        if state.look_mode:
+            _galaxy_snap_cursor()
+            step = galaxy_view.scale() * (5 if shift else 1)
+            state.look_x = max(0, min(galaxy_view.GALAXY_W, state.look_x + dx * step))
+            state.look_y = max(0, min(galaxy_view.GALAXY_H, state.look_y + dy * step))
+            galaxy_view.follow(state.look_x, state.look_y)
+        else:
+            n = SCROLL_STEP_FAST if shift else SCROLL_STEP
+            galaxy_view.scroll(dx * n, dy * n)
 
 
 def _system(event, story_text):
-    moved = False
+    """Flying inside a system is free: fuel is only used by jump gates."""
+    moves = {
+        tcod.event.KeySym.UP: (0, -1), tcod.event.KeySym.DOWN: (0, 1),
+        tcod.event.KeySym.LEFT: (-1, 0), tcod.event.KeySym.RIGHT: (1, 0),
+    }
+    sym = event.sym
+    if sym in moves:
+        state.autopilot = None              # taking the stick cancels autopilot
+        dx, dy = moves[sym]
+        travel.step(dx, dy)
 
-    if event.sym == tcod.event.KeySym.UP:
-        state.system_player_y -= 1
-        moved = True
-    elif event.sym == tcod.event.KeySym.DOWN:
-        state.system_player_y += 1
-        moved = True
-    elif event.sym == tcod.event.KeySym.LEFT:
-        state.system_player_x -= 1
-        moved = True
-    elif event.sym == tcod.event.KeySym.RIGHT:
-        state.system_player_x += 1
-        moved = True
+    elif sym == tcod.event.KeySym.TAB:
+        shift = bool(getattr(event, "mod", 0) & tcod.event.Modifier.SHIFT)
+        travel.autopilot_next_target(-1 if shift else 1)
 
-    if moved:
-        fuel_cost = _calculate_fuel_consumption()
-        
-        if state.fuel <= 0:
-            state.add_message("No fuel!")
-            # undo the move
-            if event.sym == tcod.event.KeySym.UP:
-                state.system_player_y += 1
-            elif event.sym == tcod.event.KeySym.DOWN:
-                state.system_player_y -= 1
-            elif event.sym == tcod.event.KeySym.LEFT:
-                state.system_player_x += 1
-            elif event.sym == tcod.event.KeySym.RIGHT:
-                state.system_player_x -= 1
-            state.game_over_reason = "You ran out of fuel and drifted into the void."
-            state.game_state = "GAME_OVER"
-        elif state.fuel < fuel_cost:
-            # Not enough fuel for this movement
-            state.add_message(f"Need {fuel_cost:.1f} fuel, only {state.fuel:.1f} remaining!")
-            # undo the move
-            if event.sym == tcod.event.KeySym.UP:
-                state.system_player_y += 1
-            elif event.sym == tcod.event.KeySym.DOWN:
-                state.system_player_y -= 1
-            elif event.sym == tcod.event.KeySym.LEFT:
-                state.system_player_x += 1
-            elif event.sym == tcod.event.KeySym.RIGHT:
-                state.system_player_x -= 1
-            state.game_over_reason = "You ran out of fuel and drifted into the void."
-            state.game_state = "GAME_OVER"
-        else:
-            state.fuel -= fuel_cost
-            state.move_counter += 1
-            
-            # Display fuel consumption for player awareness
-            if fuel_cost != 1.0:
-                state.add_message(f"Fuel used: {fuel_cost:.1f}")
-
-            # Every 50 moves = 1 day
-            if state.move_counter >= 50:
-                state.move_counter = 0
-                advance_day()
-
-    elif event.sym == tcod.event.KeySym.RETURN:
+    elif sym in _key("RETURN", "KP_ENTER"):
         if not state.current_object:
             return
+        state.autopilot = None
         if hasattr(state.current_object, "destination"):
             state.game_state = "JUMPPOINT"
         else:
             state.current_location = state.current_object
+            state.location_index = 0
+            state.add_message(f"Docked at {state.current_object.name}.")
             state.game_state = "LOCATION"
 
-    elif event.sym == tcod.event.KeySym.F1:
+    elif sym == tcod.event.KeySym.F1:
         from core.ships import spawn_pirate
         from core.combat import CombatManager
         state.current_combat = CombatManager(state.player_ship, spawn_pirate())
@@ -229,16 +515,17 @@ def _jumppoint(event, story_text):
 
     elif event.sym == tcod.event.KeySym.RETURN:
 
+        need = travel.jump_fuel(state.current_object)
+        if state.fuel < need:
+            state.add_message(f"Not enough fuel: this jump needs {need}, you have "
+                              f"{state.fuel:.0f}. Refuel at a station (5).")
+            travel.check_stranded()
+            return
         if state.credits < state.current_object.cost:
             state.add_message("Not enough credits.")
             return
 
-        # if state.fuel < 20:
-        #     state.add_message("Not enough fuel to jump!")
-        #     return
-
-        # state.fuel -= 20
-
+        state.fuel -= need
         advance_day()
 
         state.credits -= state.current_object.cost
@@ -251,7 +538,7 @@ def _jumppoint(event, story_text):
         state.hyperspace_complete = False
         state.hyperspace_timer = time.time()
 
-        audio.play("sfx/Reverse-Time-Loop-isaiah658.ogg")
+        audio.play_sfx("sfx/Reverse-Time-Loop-isaiah658.ogg", tag="hyperspace")
 
         state.game_state = "HYPERSPACE"
 
@@ -267,92 +554,265 @@ def _planet(event, story_text):
     elif event.sym == tcod.event.KeySym.ESCAPE:
         state.game_state = "SYSTEM"
 
+STATION_SCREENS = ("LOCATION", "MARKET", "MISSIONS")
+
+
+def _station_nav(event):
+    """Keys that work on every docked screen (station menu, Trading Post,
+    Missions Board): 1-5 open a facility directly, TAB / Shift+TAB move to
+    the next / previous screen. Returns True if the key was used."""
+    from render.location import LOCATION_ITEMS
+    sym = event.sym
+    number_keys = [tcod.event.KeySym.N1, tcod.event.KeySym.N2, tcod.event.KeySym.N3,
+                   tcod.event.KeySym.N4, tcod.event.KeySym.N5]
+    number_keys += [k for k in _key("KP_1", "KP_2", "KP_3", "KP_4", "KP_5")]
+    if sym in number_keys:
+        i = number_keys.index(sym) % 5
+        state.location_index = i
+        LOCATION_ACTIONS.get(LOCATION_ITEMS[i][2], _closed)()
+        return True
+    if sym == tcod.event.KeySym.TAB:
+        shift = bool(getattr(event, "mod", 0) & tcod.event.Modifier.SHIFT)
+        order = ["LOCATION", "MARKET", "MISSIONS"]
+        if not state.current_location.market:
+            order.remove("MARKET")
+        i = order.index(state.game_state) if state.game_state in order else 0
+        target = order[(i + (-1 if shift else 1)) % len(order)]
+        {"LOCATION": _open_station, "MARKET": _open_market,
+         "MISSIONS": _open_missions}[target]()
+        return True
+    return False
+
+
+def _open_station():
+    state.game_state = "LOCATION"
+
+
+# ---------------------------------------------------------------------------
+# Going places directly (used by the quick menu)
+# ---------------------------------------------------------------------------
+
+def goto_screen(screen):
+    """Open a screen from wherever you are, keeping track of how to get back."""
+    gs = state.game_state
+    state.look_mode = False
+    if screen == "GALAXY":
+        if gs in OVERLAY_KEYS.values():
+            gs = state.overlay_return or "SYSTEM"
+        if gs != "GALAXY":
+            state.galaxy_return = gs
+        state.autopilot = None
+        state.galaxy_preview = None
+        state.game_state = "GALAXY"
+        if state.current_star:
+            galaxy_view.center_on(state.current_star.x, state.current_star.y)
+    elif screen in OVERLAY_KEYS.values():
+        if gs not in OVERLAY_KEYS.values():
+            state.overlay_return = gs
+        state.message_scroll = 0
+        state.game_state = screen
+    else:                                   # a base screen: close everything on top
+        state.galaxy_return = None
+        state.overlay_return = None
+        state.galaxy_preview = None
+        state.game_state = screen
+
+
+def goto_station(screen):
+    """Station menu / Trading Post / Missions Board, from any screen while docked."""
+    state.galaxy_return = None
+    state.overlay_return = None
+    {"LOCATION": _open_station, "MARKET": _open_market,
+     "MISSIONS": _open_missions}[screen]()
+
+
+def quick_refuel():
+    _refuel()
+
+
+def undock():
+    name = state.current_location.name if state.current_location else "the station"
+    state.galaxy_return = None
+    state.overlay_return = None
+    state.game_state = "SYSTEM"
+    state.add_message(f"Undocked from {name}.")
+
+
+def fly_to(obj, then):
+    """Autopilot to a planet / station / gate; then dock, trade or open the
+    jump menu when you get there."""
+    goto_screen("SYSTEM")
+    if (obj.x, obj.y) == (state.system_player_x, state.system_player_y):
+        arrive(then, obj)
+        return
+    name = f"the gate to {obj.destination}" if hasattr(obj, "destination") else obj.name
+    travel.start_autopilot(obj.x, obj.y, name)
+    state.autopilot_then = (then, obj)
+
+
+def arrive(then, obj):
+    """What fly_to does on arrival."""
+    if then == "jump":
+        state.current_object = obj
+        state.game_state = "JUMPPOINT"
+        return
+    state.current_location = obj
+    state.current_object = obj
+    state.location_index = 0
+    state.add_message(f"Docked at {obj.name}.")
+    state.game_state = "LOCATION"
+    if then == "trade" and obj.market:
+        _open_market()
+
+
 def _location(event, story_text):
-    if event.sym == tcod.event.KeySym.ESCAPE:
+    from render.location import LOCATION_ITEMS
+    sym = event.sym
+    n = len(LOCATION_ITEMS)
+
+    if sym == tcod.event.KeySym.ESCAPE:
         state.game_state = "SYSTEM"
-    elif event.sym == tcod.event.KeySym.N1:
-        state.previous_state = state.game_state
-        state.game_state = "MARKET"
-    elif event.sym == tcod.event.KeySym.N3:
-        state.previous_state = state.game_state
-        state.game_state = "MISSIONS"
+        state.add_message(f"Undocked from {state.current_location.name}.")
+        return
+    if _station_nav(event):
+        return
+    if sym == tcod.event.KeySym.UP:
+        state.location_index = (state.location_index - 1) % n
+        return
+    if sym == tcod.event.KeySym.DOWN:
+        state.location_index = (state.location_index + 1) % n
+        return
 
-        # Only generate if this location has no available missions yet
-        existing_sources = {m.source for m in state.missions if m.status == "available"}
+    if sym not in _key("RETURN", "KP_ENTER"):
+        return
 
-        if state.current_location.name not in existing_sources:
-            new_missions = generate_missions(
-                state.current_location,
-                state.current_system,
-                state.stars,
-                count=4,
-            )
-            state.missions = [m for m in state.missions if m.status == "active"]
-            state.missions.extend(new_missions)
+    action = LOCATION_ITEMS[state.location_index][2]
+    LOCATION_ACTIONS.get(action, _closed)()
 
-        state.visible_missions = [
-            m for m in state.missions
-            if m.source == state.current_location.name
-            or (m.status == "active" and m.destination == state.current_location.name)
-        ]
 
-        state.selected_mission_index = 0
-    
-    elif event.sym == tcod.event.KeySym.N5:
-        archetype = state.current_system.archetype
-        price_per_unit = FUEL_PRICES.get(archetype)
+def _closed():
+    state.add_message("That facility is closed for now.")
 
-        if price_per_unit is None:
-            state.add_message("No civilian refueling available here.")
-            return
-        
-        fuel_needed = state.max_fuel - state.fuel
-        if fuel_needed == 0:
-            state.add_message("Fuel tank is already full.")
-            return
-        
-        cost = fuel_needed * price_per_unit
 
-        if state.credits < cost:
-            state.add_message(f"Not enough credits to refuel. Need {cost} credits.")
-            return
-        
-        state.credits -= cost
-        state.fuel = state.max_fuel
-        state.add_message(f"Refueled for {cost} credits ({price_per_unit}/unit).")
+def _open_market():
+    if not state.current_location.market:
+        state.add_message("No market at this location.")
+        return
+    state.market_index = 0
+    state.location_index = 0
+    state.game_state = "MARKET"
+    # remember today's prices in the price log
+    from core import pricelog
+    pricelog.record(state.current_location, state.current_system, state.day)
+
+
+def _open_missions():
+    state.location_index = 2
+    state.game_state = "MISSIONS"
+
+    # Only generate if this location has no available missions yet
+    existing_sources = {m.source for m in state.missions if m.status == "available"}
+
+    if state.current_location.name not in existing_sources:
+        new_missions = generate_missions(
+            state.current_location,
+            state.current_system,
+            state.stars,
+            count=4,
+        )
+        state.missions = [m for m in state.missions if m.status == "active"]
+        state.missions.extend(new_missions)
+
+    state.visible_missions = [
+        m for m in state.missions
+        if m.source == state.current_location.name
+        or (m.status == "active" and m.destination == state.current_location.name)
+    ]
+
+    state.selected_mission_index = 0
+
+
+def _refuel():
+    archetype = state.current_system.archetype
+    price_per_unit = FUEL_PRICES.get(archetype)
+
+    if price_per_unit is None:
+        state.add_message("No civilian refueling available here.")
+        return
+
+    fuel_needed = state.max_fuel - state.fuel
+    if fuel_needed <= 0.01:
+        state.add_message("Fuel tank is already full.")
+        return
+
+    cost = int(round(fuel_needed * price_per_unit))
+
+    if state.credits < cost:
+        state.add_message(f"Not enough credits to refuel. Need {cost} credits.")
+        return
+
+    state.credits -= cost
+    state.fuel = state.max_fuel
+    state.add_message(f"Refueled for {cost} credits ({price_per_unit}/unit).")
+
+
+LOCATION_ACTIONS = {
+    "market": _open_market,
+    "missions": _open_missions,
+    "refuel": _refuel,
+}
 
 
 def _market(event, story_text):
-    if event.sym == tcod.event.KeySym.ESCAPE:
-        state.game_state = state.previous_state
+    from render.market import market_goods
+    sym = event.sym
+    goods = market_goods()
 
-    elif event.sym == tcod.event.KeySym.N1:
-        food_price = state.current_location.market["Food"]
-        item = ITEMS["Food"]
+    if sym == tcod.event.KeySym.ESCAPE:
+        state.game_state = "LOCATION"
+        return
+    if _station_nav(event):
+        return
+    if not goods:
+        return
 
-        if state.credits >= food_price and state.inventory.free_space() >= item.size:
-            state.credits -= food_price
-            state.inventory.items.append(item)
-            state.add_message("Bought Food")
+    if sym == tcod.event.KeySym.UP:
+        state.market_index = (state.market_index - 1) % len(goods)
+    elif sym == tcod.event.KeySym.DOWN:
+        state.market_index = (state.market_index + 1) % len(goods)
+    elif sym in (tcod.event.KeySym.RIGHT, tcod.event.KeySym.B, tcod.event.KeySym.RETURN):
+        _buy(goods[state.market_index])
+    elif sym in (tcod.event.KeySym.LEFT, tcod.event.KeySym.S):
+        _sell(goods[state.market_index])
 
-    elif event.sym == tcod.event.KeySym.N2:
-        for item in state.inventory.items:
-            if item.name == "Food":
-                food_price = state.current_location.market["Food"]
-                state.inventory.items.remove(item)
-                state.credits += food_price
-                state.add_message("Sold food")
-                break
 
-    elif event.sym == tcod.event.KeySym.N3:
-        fuel_needed = state.max_fuel - state.fuel
-        cost = fuel_needed * 2
-        if state.credits >= cost:
-            state.credits -= cost
-            state.fuel = state.max_fuel
-            state.add_message(f"Refueled for {cost} credits")
-        else:
-            state.add_message("Not enough credits for refuel")
+def _buy(name):
+    price = state.current_location.market[name]
+    item = ITEMS[name]
+    if state.credits < price:
+        state.add_message(f"Not enough credits for {name}.")
+        return
+    if state.inventory.free_space() < item.size:
+        state.add_message("Not enough cargo space.")
+        return
+    state.credits -= price
+    state.inventory.items.append(item)
+    if state.economy:
+        state.economy.player_trade(state.current_location, name, 1)
+    state.add_message(f"Bought 1 {name} for {price} cr.")
+
+
+def _sell(name):
+    price = state.current_location.market[name]
+    for item in state.inventory.items:
+        if item.name == name:
+            state.inventory.items.remove(item)
+            state.credits += price
+            if state.economy:
+                state.economy.player_trade(state.current_location, name, -1)
+            state.add_message(f"Sold 1 {name} for {price} cr.")
+            return
+    state.add_message(f"You have no {name} to sell.")
 
 
 def _combat(event, story_text):
@@ -424,7 +884,9 @@ def _resolve_combat_outcome(combat):
 
 def _missions(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
-        state.game_state = state.previous_state
+        state.game_state = "LOCATION"
+    elif _station_nav(event):
+        return
 
     elif event.sym == tcod.event.KeySym.UP:
         if state.visible_missions:
@@ -495,22 +957,164 @@ def _missions(event, story_text):
                 state.look_y = star.y
                 state.look_mode = True
                 state.mission_nav_target = dest_system
-                state.previous_state = state.game_state
+                state.galaxy_preview = None
+                galaxy_view.center_on(star.x, star.y)
+                state.galaxy_return = state.game_state
                 state.game_state = "GALAXY"
                 break
 
 def _inventory(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
-        state.game_state = state.previous_state
+        _close_overlay()
 
 
 def _message(event, story_text):
+    from render.messages import max_scroll
     if event.sym == tcod.event.KeySym.ESCAPE:
-        state.game_state = state.previous_state
+        _close_overlay()
+    elif event.sym == tcod.event.KeySym.UP:
+        state.message_scroll = min(max_scroll(), state.message_scroll + 1)
+    elif event.sym == tcod.event.KeySym.DOWN:
+        state.message_scroll = max(0, state.message_scroll - 1)
+    elif event.sym == tcod.event.KeySym.PAGEUP:
+        state.message_scroll = min(max_scroll(), state.message_scroll + 20)
+    elif event.sym == tcod.event.KeySym.PAGEDOWN:
+        state.message_scroll = max(0, state.message_scroll - 20)
+
+
+def _help(event, story_text):
+    from render.help import PAGES
+    if event.sym == tcod.event.KeySym.ESCAPE:
+        _close_overlay()
+    elif event.sym in (tcod.event.KeySym.RIGHT, tcod.event.KeySym.DOWN, tcod.event.KeySym.TAB):
+        state.help_page = (state.help_page + 1) % len(PAGES)
+    elif event.sym in (tcod.event.KeySym.LEFT, tcod.event.KeySym.UP):
+        state.help_page = (state.help_page - 1) % len(PAGES)
+
+
+def _exchange(event, story_text):
+    from render.exchange import TABS, tab_count
+    sym = event.sym
+    if sym == tcod.event.KeySym.ESCAPE:
+        _close_overlay()
+        return
+    tab_keys = [getattr(tcod.event.KeySym, f"N{i + 1}") for i in range(len(TABS))]
+    if sym in tab_keys:
+        state.exchange_tab, state.exchange_index = tab_keys.index(sym), 0
+    elif sym in (tcod.event.KeySym.RIGHT, tcod.event.KeySym.TAB):
+        state.exchange_tab, state.exchange_index = (state.exchange_tab + 1) % len(TABS), 0
+    elif sym == tcod.event.KeySym.LEFT:
+        state.exchange_tab, state.exchange_index = (state.exchange_tab - 1) % len(TABS), 0
+    elif sym in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN):
+        n = tab_count(state.exchange_tab)
+        if n:
+            step = -1 if sym == tcod.event.KeySym.UP else 1
+            state.exchange_index = (state.exchange_index + step) % n
+    elif sym == tcod.event.KeySym.U:
+        # TODO: replace with a purchasable ship upgrade; temporary debug key.
+        # Deliberately unadvertised unless DEBUG is on (see render/exchange.py).
+        state.market_scanner = not state.market_scanner
+        state.exchange_index = 0
+        state.add_message("Long-range market scanner "
+                          + ("installed." if state.market_scanner else "removed."))
+    elif sym == tcod.event.KeySym.F and state.DEBUG and state.economy:
+        state.economy.tick()      # debug: run the economy one day forward
+
+
+def _radio(event, story_text):
+    """Ship's radio: ↑↓ station, ENTER tune in, ←→ prev/next track,
+    TAB play mode, +/- volume, X on/off."""
+    from render.radio import stations
+    sym = event.sym
+    tracks = stations()
+    if sym == tcod.event.KeySym.ESCAPE:
+        _close_overlay()
+    elif sym in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN) and tracks:
+        step = -1 if sym == tcod.event.KeySym.UP else 1
+        state.radio_index = (state.radio_index + step) % len(tracks)
+    elif sym in _key("RETURN", "KP_ENTER") and tracks:
+        track = tracks[state.radio_index % len(tracks)]
+        if audio.music_muted():
+            audio.toggle_music_mute()
+        audio.radio_play(track)
+    elif sym == tcod.event.KeySym.RIGHT:
+        audio.radio_next()
+    elif sym == tcod.event.KeySym.LEFT:
+        audio.radio_prev()
+    elif sym == tcod.event.KeySym.TAB:
+        mode = audio.radio_cycle_mode()
+        state.add_message(f"Radio: {mode.replace('order', 'in order').replace('repeat', 'repeat one')}")
+    elif sym in ZOOM_IN_KEYS or sym in ZOOM_OUT_KEYS:
+        step = 0.1 if sym in ZOOM_IN_KEYS else -0.1
+        if audio.music_muted():
+            audio.toggle_music_mute()
+        audio.set_music_volume(audio.music_volume() + step)
+    elif sym == tcod.event.KeySym.X:
+        audio.toggle_music_mute()
+
+
+def _pricelog(event, story_text):
+    """Price log: ↑↓ pick a commodity, C clears the whole log."""
+    from core import pricelog
+    rows = pricelog.summary()
+    sym = event.sym
+    if sym == tcod.event.KeySym.ESCAPE:
+        _close_overlay()
+    elif sym in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN) and rows:
+        step = -1 if sym == tcod.event.KeySym.UP else 1
+        state.pricelog_index = (state.pricelog_index + step) % len(rows)
+    elif sym == tcod.event.KeySym.C:
+        pricelog.clear()
+        state.pricelog_index = 0
+        state.add_message("Price log cleared.")
+
+
+def _notebook(event, story_text):
+    """Notebook: ENTER write, R note this market's prices, ↑↓ select, DEL delete."""
+    from core import notebook
+    sym = event.sym
+    notes = notebook.notes()
+    if sym == tcod.event.KeySym.ESCAPE:
+        _close_overlay()
+    elif sym in _key("RETURN", "KP_ENTER"):
+        state.note_input = ""
+    elif sym == tcod.event.KeySym.R:
+        record = notebook.price_record()
+        if record and notebook.add(record):
+            state.note_index = len(notebook.notes()) - 1
+            from core import pricelog
+            pricelog.record(state.current_location, state.current_system, state.day)
+            state.add_message(f"Noted prices at {state.current_location.name}.")
+    elif sym in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN) and notes:
+        step = -1 if sym == tcod.event.KeySym.UP else 1
+        state.note_index = max(0, min(len(notes) - 1, state.note_index + step))
+    elif sym in _key("DELETE", "BACKSPACE") and notes:
+        notebook.delete(state.note_index)
+        state.note_index = max(0, min(state.note_index, len(notebook.notes()) - 1))
+
+
+def _note_typing(event):
+    from core import notebook
+    if isinstance(event, tcod.event.TextInput):
+        if len(state.note_input) < notebook.MAX_LEN:
+            state.note_input += event.text
+        return
+    if not isinstance(event, tcod.event.KeyDown):
+        return
+    sym = event.sym
+    if sym == tcod.event.KeySym.ESCAPE:
+        state.note_input = None
+    elif sym == tcod.event.KeySym.BACKSPACE:
+        state.note_input = state.note_input[:-1]
+    elif sym in _key("RETURN", "KP_ENTER"):
+        if notebook.add(state.note_input):
+            state.note_index = len(notebook.notes()) - 1
+        state.note_input = None
+
 
 def _m_log(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
-        state.game_state = "SYSTEM"
+        _close_overlay()
     
 def update_hyperspace():
     
@@ -524,9 +1128,8 @@ def update_hyperspace():
         state.hyperspace_complete = True
         state.hyperspace_complete_timer = time.time()
 
-        audio.play(
-            "sfx/NenadSimic - Muffled Distant Explosion.ogg"
-        )
+        audio.stop_sfx("hyperspace")
+        audio.play_sfx("sfx/NenadSimic - Muffled Distant Explosion.ogg")
 
     if state.hyperspace_complete:
 
@@ -562,6 +1165,7 @@ def update_hyperspace():
                     state.hyperspace_stage = 0
 
                     state.game_state = "SYSTEM"
+                    travel.check_stranded()
 
                     break
 
@@ -579,4 +1183,9 @@ HANDLERS = {
     "INVENTORY": _inventory,
     "MESSAGES": _message,
     "MISSION_LOG": _m_log,
+    "HELP": _help,
+    "EXCHANGE": _exchange,
+    "RADIO": _radio,
+    "NOTEBOOK": _notebook,
+    "PRICELOG": _pricelog,
 }

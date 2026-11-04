@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import zlib
 
 from core import state
 from core.seedgen import SeedSequence
@@ -145,8 +146,12 @@ def generate_missions(location, current_system, all_stars, count=4):
     all_stars      — full star list for picking destinations
     count          — how many missions to generate
     """
-    seed = (state.galaxy_seed ^ hash(location.name + current_system.name)) % (2**32)
+    # zlib.crc32 is stable between runs (Python's hash() of a str is not),
+    # so the same galaxy seed always posts the same contracts at a station
+    key = zlib.crc32((location.name + "|" + current_system.name).encode("utf-8"))
+    seed = (state.galaxy_seed ^ key) % (2**32)
     seq = SeedSequence(seed)
+    rng = random.Random(seed)
 
     archetype = getattr(current_system, "archetype", "Trade Hub")
     source_name = location.name
@@ -179,10 +184,10 @@ def generate_missions(location, current_system, all_stars, count=4):
 
         if mission_type == "cargo":
             cargo_pool = ARCHETYPE_CARGO.get(archetype, ["Food"])
-            commodity  = random.choice(cargo_pool)
+            commodity  = rng.choice(cargo_pool)
             a_min, a_max = CARGO_AMOUNTS[difficulty]
-            amount     = random.randint(a_min, a_max)
-            title_t, desc_t = random.choice(CARGO_TEMPLATES)
+            amount     = rng.randint(a_min, a_max)
+            title_t, desc_t = rng.choice(CARGO_TEMPLATES)
             title = title_t
             desc  = desc_t.format(
                 amount=amount,
@@ -208,7 +213,7 @@ def generate_missions(location, current_system, all_stars, count=4):
             ))
 
         elif mission_type == "survey":
-            title_t, desc_t = random.choice(SURVEY_TEMPLATES)
+            title_t, desc_t = rng.choice(SURVEY_TEMPLATES)
             desc = desc_t.format(destination=dest_star.name, source=source_name)
             missions.append(Mission(
                 id=_next_id(),
@@ -225,11 +230,11 @@ def generate_missions(location, current_system, all_stars, count=4):
 
         elif mission_type == "patrol":
             # Pick 2 intermediate systems to visit
-            patrol_stars = random.sample(
+            patrol_stars = rng.sample(
                 other_stars, min(2, len(other_stars))
             )
             systems_to_visit = [s.name for s in patrol_stars]
-            title_t, desc_t = random.choice(PATROL_TEMPLATES)
+            title_t, desc_t = rng.choice(PATROL_TEMPLATES)
             desc = desc_t.format(source=source_name, destination=source_name)
             missions.append(Mission(
                 id=_next_id(),
@@ -246,7 +251,7 @@ def generate_missions(location, current_system, all_stars, count=4):
             ))
 
         elif mission_type == "bounty":
-            title_t, desc_t = random.choice(BOUNTY_TEMPLATES)
+            title_t, desc_t = rng.choice(BOUNTY_TEMPLATES)
             desc = desc_t.format(destination=dest_star.name, source=source_name)
             missions.append(Mission(
                 id=_next_id(),

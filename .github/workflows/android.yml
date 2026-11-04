@@ -1,0 +1,59 @@
+# Builds the Android APK of the mobile version (android/) on GitHub's servers.
+# Run it from the GitHub website: Actions -> "Build Android APK" -> Run workflow,
+# or it runs by itself when you push changes to android/.
+# The APK appears under the run's "Artifacts" as spacerouge-apk.
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf automake libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev \
+            libssl-dev build-essential ccache
+          pip install --upgrade pip
+          pip install --upgrade buildozer "cython<3.0"
+
+      # Cache the Android SDK/NDK and compiled libraries so later builds are fast
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            android/.buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('android/buildozer.spec') }}
+
+      - name: Build APK
+        run: buildozer android debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spacerouge-apk
+          path: android/bin/*.apk
+          if-no-files-found: error

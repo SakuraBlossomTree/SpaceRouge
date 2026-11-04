@@ -91,7 +91,6 @@ STAR_NAMES = [
     "Sol",
     "Alpha Centauri",
     "Sirius",
-    "Vega",
     "Altair",
     "Polaris",
 ]

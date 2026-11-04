@@ -11,7 +11,7 @@
       "reward_items": [],
       "status": "available",
       "source": "Earth",
-      "destination": "New Horizon",
+      "destination": "Mars",
       "difficulty": 1
     },
     {
@@ -23,7 +23,7 @@
       "reward_items": [],
       "status": "available",
       "source": "Mars",
-      "destination": "Vega Prime",
+      "destination": "Earth",
       "difficulty": 3
     }
   ]

@@ -223,3 +223,9 @@ sfx/*
 
 save.json
 (src/core/events.py)
+# Player settings (font, tutorial on/off)
+settings.json
+music_levels.json
+notebook.json
+pricelog.json
+save.json

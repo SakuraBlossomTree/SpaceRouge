@@ -168,11 +168,30 @@ FUEL_PRICES = {
     "Military":      None,  # placeholder, no refueling for now
 }
 
-# Reserved names that get hand-built systems
-RESERVED = {"Sol", "Vega"}
+# Fuel consumption multipliers for local system conditions.
+# Above 1.0 = harder to fly, below 1.0 = easier to fly.
+FUEL_CONSUMPTION_MODIFIERS = {
+    "Agricultural": 0.95,   # open farmland orbits
+    "Mining":       1.15,   # dense asteroid belts
+    "Industrial":   1.10,   # heavy orbital traffic
+    "Trade Hub":    1.00,   # well-charted trade lanes
+    "Research":     1.05,   # restricted approach corridors
+    "Frontier":     0.90,   # sparse traffic and open space
+    "Military":     1.15,   # patrol routes and restricted zones
+}
 
-# Total stars in the galaxy (including Sol and Vega)
-GALAXY_SIZE = 30
+# Reserved names that get hand-built systems
+RESERVED = {"Sol"}
+
+# Total stars in the galaxy (including Sol)
+GALAXY_SIZE = 64
+
+# Galaxy bounds in world units. The chart scrolls and zooms over this area
+# (see core/galaxy_view.py), so it can be much bigger than the screen.
+GALAXY_W = 192
+GALAXY_H = 144
+GALAXY_MARGIN = 3
+MIN_STAR_SPACING = 4   # stars closer than this (in world units) are re-rolled
  
 # System-map bounds — objects placed within this area
 SYS_W = 70
@@ -286,60 +305,6 @@ def create_sol_system():
         )
     )
 
-    system.jump_points.append(
-        JumpPoint(
-            35,
-            20,
-            system.name + " jump point",
-            system.name,
-            "Vega",
-            10,
-        )
-    )
-
-    return system
-
-def create_vega_system():
-
-    system = StarSystem("Vega")
-    system.archetype = "Frontier"
-    system.description = "A remote system on the edge of explored space."
-
-    market = _generate_market("Frontier", SeedSequence(11111))
-
-    system.planets.append(
-        Planet(
-            20,
-            20,
-            "New Horizon",
-            "Independent",
-            11111,
-            (0, 0, 255),
-            market
-        )
-    )
-
-    system.stations.append(
-        Station(
-            25,
-            15,
-            "Vega Prime",
-            "Independent",
-            market
-        )
-    )
-
-    system.jump_points.append(
-        JumpPoint(
-            50,
-            50,
-            system.name + " jump point",
-            system.name,
-            "Sol",
-            10,
-        )
-    )
-
     return system
 
 # --- Procedural system generation --------------------------------------------
@@ -392,19 +357,19 @@ def generate_system(name, master_seed):
         faction = FACTIONS[seq.next_seed() % len(FACTIONS)]
         color = PLANET_COLORS[seq.next_seed() % len(PLANET_COLORS)]
         planet_seed = seq.next_seed()
-        food_price = generate_food_price(SeedSequence(planet_seed))
+        # full archetype market (None for Military systems)
+        market = _generate_market(archetype_name, SeedSequence(planet_seed))
         system.planets.append(
-            Planet(x, y, planet_name, faction, planet_seed, color,
-                   {"Food": food_price})
+            Planet(x, y, planet_name, faction, planet_seed, color, market)
         )
  
     for _ in range(num_stations):
         x, y = _free_pos(seq, used)
         station_name = _gen_station_name(name, seq)
         faction = FACTIONS[seq.next_seed() % len(FACTIONS)]
-        food_price = generate_food_price(SeedSequence(seq.next_seed()))
+        market = _generate_market(archetype_name, SeedSequence(seq.next_seed()))
         system.stations.append(
-            Station(x, y, station_name, faction, {"Food": food_price})
+            Station(x, y, station_name, faction, market)
         )
  
     # Jump points are added later by _wire_jump_points
@@ -465,11 +430,74 @@ def _wire_jump_points(stars, master_seq):
         connection_count[a_name] += 1
         connection_count[b_name] += 1
 
+def _connect_components(stars, master_seq):
+    """
+    Nearest-neighbour wiring can leave isolated clusters, which on a big map
+    means systems you can never reach. Join every cluster to its closest
+    neighbouring cluster until the whole galaxy is one network.
+    """
+    star_map = {star.name: star for star in stars}
+
+    def components():
+        seen, groups = set(), []
+        for star in stars:
+            if star.name in seen:
+                continue
+            group, todo = set(), [star.name]
+            while todo:
+                n = todo.pop()
+                if n in group:
+                    continue
+                group.add(n)
+                todo.extend(jp.destination for jp in star_map[n].system.jump_points)
+            seen |= group
+            groups.append(group)
+        return groups
+
+    groups = components()
+    while len(groups) > 1:
+        main_group = groups[0]
+        best = None
+        for a_name in main_group:
+            a = star_map[a_name]
+            for other in groups[1:]:
+                for b_name in other:
+                    b = star_map[b_name]
+                    d = (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+                    if best is None or d < best[0]:
+                        best = (d, a, b)
+        _, a, b = best
+        cost = 10 + master_seq.next_seed() % 41
+        x, y = _free_pos(master_seq, _used_positions(a.system))
+        a.system.jump_points.append(
+            JumpPoint(x, y, f"{a.name} -> {b.name}", a.name, b.name, cost))
+        rx, ry = _free_pos(master_seq, _used_positions(b.system))
+        b.system.jump_points.append(
+            JumpPoint(rx, ry, f"{b.name} -> {a.name}", b.name, a.name, cost))
+        groups = components()
+
+
+def _galaxy_pos(master_seq, used):
+    """Random star position inside the galaxy, not too close to another star."""
+    span_x = GALAXY_W - GALAXY_MARGIN * 2
+    span_y = GALAXY_H - GALAXY_MARGIN * 2
+    x = y = 0
+    for attempt in range(300):
+        x = GALAXY_MARGIN + master_seq.next_seed() % span_x
+        y = GALAXY_MARGIN + master_seq.next_seed() % span_y
+        spacing = MIN_STAR_SPACING if attempt < 200 else 1
+        if all((x - ux) ** 2 + (y - uy) ** 2 >= spacing ** 2 for ux, uy in used):
+            break
+    used.add((x, y))
+    return x, y
+
+
 # --- Main entry point --------------------------------------------------------
  
 def generate_stars(seed=None):
-    """Generate the full galaxy of 30 stars with procedural systems."""
-    master_seq = SeedSequence()  # fixed galaxy seed — change to randomize
+    """Generate the full galaxy of GALAXY_SIZE stars with procedural systems."""
+    # Same seed -> same galaxy. seed=None picks a new random galaxy.
+    master_seq = SeedSequence(seed)
  
     # Step 1: generate star names and positions
     used_names = set(RESERVED)
@@ -477,25 +505,15 @@ def generate_stars(seed=None):
     stars = []
  
     # Hand-built stars first so they claim their names
-    for name in ("Sol", "Vega"):
-        for _ in range(200):
-            x = master_seq.next_seed() % WIDTH
-            y = master_seq.next_seed() % HEIGHT
-            if (x, y) not in used_galaxy_pos:
-                used_galaxy_pos.add((x, y))
-                break
+    for name in ("Sol",):
+        x, y = _galaxy_pos(master_seq, used_galaxy_pos)
         star_type = "Yellow Dwarf" if name == "Sol" else "Blue Dwarf"
         stars.append(Star(x, y, name, star_type))
  
     # Procedural stars
     for _ in range(GALAXY_SIZE - len(RESERVED)):
         name = _gen_star_name(master_seq, used_names)
-        for _ in range(200):
-            x = master_seq.next_seed() % WIDTH
-            y = master_seq.next_seed() % HEIGHT
-            if (x, y) not in used_galaxy_pos:
-                used_galaxy_pos.add((x, y))
-                break
+        x, y = _galaxy_pos(master_seq, used_galaxy_pos)
         star_type = list(STAR_TYPES.keys())[master_seq.next_seed() % len(STAR_TYPES)]
         stars.append(Star(x, y, name, star_type))
  
@@ -503,20 +521,19 @@ def generate_stars(seed=None):
     for star in stars:
         if star.name == "Sol":
             star.system = create_sol_system()
-        elif star.name == "Vega":
-            star.system = create_vega_system()
         else:
             star.system = generate_system(star.name, master_seq.next_seed())
  
     # Step 3: wire jump points across all systems
     _wire_jump_points(stars, master_seq)
+    _connect_components(stars, master_seq)
  
     return stars, master_seq.seed
 
 
 def generate_planet(seed):
     """Procedurally generate a planet surface tile map from a seed."""
-    random.seed(seed)
+    rng = random.Random(seed)   # own RNG: doesn't disturb the global one
 
     width = 80
     height = 50
@@ -526,7 +543,7 @@ def generate_planet(seed):
     for y in range(height):
         row = []
         for x in range(width):
-            roll = random.random()
+            roll = rng.random()
 
             if roll < 0.15:
                 row.append("^")
@@ -542,7 +559,7 @@ def generate_planet(seed):
 
 def generate_hub(seed):
     """Procedurally generate a station/planet hub map with buildings."""
-    random.seed(seed)
+    rng = random.Random(seed)
 
     width = 20
     height = 12
@@ -562,8 +579,8 @@ def generate_hub(seed):
 
     for building in buildings:
         while True:
-            x = random.randint(1, width - 2)
-            y = random.randint(1, height - 2)
+            x = rng.randint(1, width - 2)
+            y = rng.randint(1, height - 2)
 
             if hub[y][x] == ".":
                 hub[y][x] = building

@@ -1,0 +1,38 @@
+{
+  "Memoraphile - Up in the Sky.ogg": {
+    "lufs": -10.42,
+    "peak": 1.0,
+    "seconds": 197.6,
+    "size": 3416638
+  },
+  "Mirror Lake.ogg": {
+    "lufs": -12.6,
+    "peak": 0.9869,
+    "seconds": 49.3,
+    "size": 907922
+  },
+  "MyVeryOwnDeadShip.ogg": {
+    "lufs": -25.08,
+    "peak": 0.4104,
+    "seconds": 226.3,
+    "size": 4571806
+  },
+  "awestruck.ogg": {
+    "lufs": -15.3,
+    "peak": 0.747,
+    "seconds": 55.4,
+    "size": 868329
+  },
+  "blackout_3mzut0qtwao.ogg": {
+    "lufs": -9.69,
+    "peak": 1.0,
+    "seconds": 189.4,
+    "size": 2974327
+  },
+  "echoes_of_the_past.ogg": {
+    "lufs": -14.86,
+    "peak": 0.6803,
+    "seconds": 48.0,
+    "size": 721916
+  }
+}

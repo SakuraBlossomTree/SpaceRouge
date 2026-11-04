@@ -15,12 +15,12 @@ ACTION_LABELS = ["[A] Attack", "[D] Defend", "[E] Escape"]
 
 SELECT_COLOR = (255, 255, 0)
 NORMAL_COLOR = (255, 255, 255)
-HEADER_COLOR = (140, 140, 140)
+HEADER_COLOR = (105, 112, 135)
 
 HULL_HI = (100, 220, 100)    # healthy hull
 HULL_MID = (220, 220, 60)    # damaged hull
 HULL_LO = (220, 60, 60)      # critical hull
-DIVIDER = (80, 80, 80)
+DIVIDER = (52, 74, 112)
 
 
 # ----------------------------------------------------------------------
@@ -47,7 +47,7 @@ def _hull_bar(current, maximum, width=20):
     """Return a filled/empty bar string of fixed width."""
     ratio = current / maximum if maximum else 0
     filled = round(ratio * width)
-    return "[" + "#" * filled + "-" * (width - filled) + "]"
+    return "█" * filled + "░" * (width - filled)
 
 
 # ----------------------------------------------------------------------
@@ -93,7 +93,7 @@ def draw(console, width, height):
     action_row = layout["action_row"]
 
     # --- Title ----------------------------------------------------------
-    title = "-- COMBAT --"
+    title = "═══  RED ALERT · HOSTILE CONTACT  ═══"
     console.print(width // 2 - len(title) // 2, layout["title_y"], title, fg=HEADER_COLOR)
 
     # --- Player stats (left) --------------------------------------------
@@ -140,7 +140,7 @@ def draw(console, width, height):
     )
 
     # --- Combat log -----------------------------------------------------
-    console.print(2, log_row - 1, "-" * (width - 4), fg=DIVIDER)
+    console.print(2, log_row - 1, "─" * (width - 4), fg=DIVIDER)
     console.print(2, log_row - 2, "Combat Log", fg=HEADER_COLOR)
 
     for i, line in enumerate(combat.log.lines):
@@ -152,7 +152,7 @@ def draw(console, width, height):
     _effects.draw_effects(console)
 
     # --- Action menu or outcome -----------------------------------------
-    console.print(2, action_row - 1, "-" * (width - 4), fg=DIVIDER)
+    console.print(2, action_row - 1, "─" * (width - 4), fg=DIVIDER)
 
     if combat.active:
         if combat.turn == CombatManager.TURN_PLAYER:

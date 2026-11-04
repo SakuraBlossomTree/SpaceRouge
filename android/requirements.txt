@@ -1,0 +1,3 @@
+# Desktop testing of the mobile build (the APK gets these via buildozer.spec)
+pygame-ce>=2.4
+numpy

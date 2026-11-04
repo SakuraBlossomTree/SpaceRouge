@@ -99,12 +99,112 @@ python main.py
 
 Controls are subject to change as development continues.
 
-| Key                 | Action                   |
-| ------------------- | ------------------------ |
-| Arrow Keys / Numpad | Movement                 |
-| Enter               | Confirm                  |
-| Escape              | Back or Cancel           |
-| Various Keys        | Navigation through menus |
+| Key                 | Action                                   |
+| ------------------- | ---------------------------------------- |
+| Arrow Keys          | Fly / move cursor / select menu rows     |
+| Enter               | Dock, confirm, accept or deliver         |
+| Escape              | Back or Cancel                           |
+| 1-5                 | Station menu shortcuts                   |
+| B / Right, S / Left | Buy / sell the selected market good      |
+| V                   | Show a contract's destination on the map |
+| X                   | Scan (look mode)                         |
+| M                   | Galaxy chart                             |
+| Arrows (galaxy)     | Scroll the chart (Shift = faster)        |
+| + / - / mouse wheel | Zoom the galaxy chart in / out           |
+| Z                   | Cycle galaxy zoom levels                 |
+| C                   | Centre the chart on your ship            |
+| TAB                 | Hop the scan cursor to the next star     |
+| N                   | Toggle the galaxy minimap                |
+| I / L / P           | Cargo hold / comms log / contract log    |
+| E                   | Galactic Exchange (markets, goods, routes) |
+| U (Exchange)        | Debug: install/remove the market scanner |
+| R (galaxy)          | Trade-route heat on the galaxy chart     |
+| H                   | Pilot's Handbook (in-game help)          |
+| T                   | Show / hide the tutorial                 |
+| F4                  | Mute / unmute music                      |
+| F5 / F6             | Music volume down / up                   |
+| F7 / F8             | Sound effects volume down / up           |
+| F10                 | Change font                              |
+| F11                 | Toggle fullscreen                        |
+| Q                   | Quit                                     |
+
+## Economy & Galactic Exchange
+
+The galaxy has a living economy (`src/core/economy.py`). Around 55 NPC
+freighters, owned by companies, fly the jump lanes every day: they look up
+to three jumps ahead for the best profit per day, buy, travel and sell.
+Every trade moves that market's price (supply and demand), and the lanes
+they use most become **trade routes**.
+
+Each faction is a **corporation** with a shipping line and two producer
+companies. Shipping lines earn from their fleets; producers earn when their
+goods leave their home systems. Share prices follow revenue, plus market
+mood, corporate mood and **news events** (pirates on a busy route, mining
+strikes, harvests, shortages, scandals, contracts).
+
+Press **E** for the Galactic Exchange. The long-range market scan is a ship
+upgrade, so a new pilot starts with local prices only: dock at a market and
+the Exchange shows its goods. Once a scanner is fitted it covers markets
+within one jump of your current system: the overview compares local prices
+with the regional average (**▼** at least 15% cheap, **▲** at least 15% dear)
+and lists the best nearby trades and market news. Further tabs list nearby
+systems, every good with its best buy/sell market, and the busiest trade
+lanes. Fly on and the scan moves with you, revealing new prices. Press **R**
+on the galaxy chart to see routes glow.
+
+Until the scanner becomes a purchasable upgrade, **U** on the Exchange is a
+debug key that installs or removes it (its on-screen hint only appears when
+`DEBUG` is on). The economy advances one day whenever a game day passes; in
+`DEBUG` mode, **F** on the Exchange runs it forward a day. Tuning constants
+are at the top of `economy.py`.
+
+## Seeds
+
+Every galaxy comes from a seed - star positions, systems, planets, markets,
+jump gates, the economy's companies and fleets, and the contracts each
+station posts. The same seed always rebuilds the same galaxy.
+
+* The current seed is shown on the title screen and saved to `save.json`.
+* Title screen: **S** to type a seed, **L** to replay last run's galaxy.
+* Or start straight into one: `python src/main.py --seed 12345`
+
+## Audio
+
+Music and sound effects play on two separate channels (via `miniaudio`),
+so effects never interrupt the music. The title theme plays on the title
+screen, the story is silent, then the other tracks in `sfx/music` play as a
+shuffled playlist. **F4** mutes the music (effects keep playing), **F5/F6** change music volume, **F7/F8** effects volume;
+both are saved in `settings.json`.
+
+## Tutorial
+
+A guided tutorial starts the first time you reach the Sol system and walks you
+through flying, docking, trading, taking a contract, the galaxy chart and jump
+gates. Press **T** to hide or resume it (toggle it off on the title screen if
+you don't want it), and **H** at any time for the Pilot's Handbook.
+
+## Classic UI
+
+With `UI_TOGGLE = True` in `src/core/state.py` (a developer switch), **F9** switches to the original
+interface - the single-screen layout with the HUD in the corner and the
+classic pixel font. Press F9 again to come back. Both UIs share the same
+game and controls; each remembers its own font, and the choice is saved
+in `settings.json`. The classic screens live in `src/render_classic/`.
+
+## Fonts
+
+The game uses DejaVu Sans Mono by default. **F10** cycles between Sans, Sans
+Large, Sans Small and the original Classic pixel font; your choice is saved
+to `settings.json`. The sans fonts are tilesheets generated from
+`assets/fonts/DejaVuSansMono.ttf` - to rebuild them (or make a new size):
+
+```bash
+pip install pillow
+python tools/make_font.py                                    # default sheets
+python tools/make_font.py assets/fonts/DejaVuSansMono.ttf 11 16 assets/fonts/sans_11x16.png
+```
+
+then add the new sheet to `FONTS` in `src/core/fonts.py`.
 
 ## Technologies
 

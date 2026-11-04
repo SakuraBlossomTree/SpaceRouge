@@ -1,0 +1,434 @@
+{
+  "3444937815": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 9,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 32,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "4130294838": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      }
+    }
+  },
+  "1688969489": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 15,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 8,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 19,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 38,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 39,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 33,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 40,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 33,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 34,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 42,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Omega Drift Platform": {
+        "price": 51,
+        "system": "Omega Drift",
+        "day": 2
+      }
+    }
+  },
+  "2369457755": {
+    "Food": {
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 14,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 11,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Water": {
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 10,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 10,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Ore": {
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 17,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 14,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Rare Minerals": {
+      "Mars": {
+        "price": 45,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 51,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 44,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 44,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Machinery": {
+      "Mars": {
+        "price": 31,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 28,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 28,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 28,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Medicine": {
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 17,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 25,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 25,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Electronics": {
+      "Mars": {
+        "price": 32,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 25,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 34,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 34,
+        "system": "Sol",
+        "day": 3
+      }
+    },
+    "Luxury Goods": {
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 3
+      },
+      "Calyx Eridani": {
+        "price": 51,
+        "system": "Rho Minor",
+        "day": 4
+      },
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 3
+      },
+      "Earth Orbital": {
+        "price": 52,
+        "system": "Sol",
+        "day": 3
+      }
+    }
+  }
+}

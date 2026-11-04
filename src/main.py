@@ -2,24 +2,37 @@
 
 Sets up the tcod context/console, loads assets, and runs the main
 loop: update -> draw -> present -> handle events.
+
+All drawing is handled by render/screen.py (layout + every screen).
 """
 
 import time
 import tcod
-import random
 
 from pathlib import Path
-from core import state, audio
+from core import state, audio, fonts, tutorial, newgame
 from core.events import handle_event, update_hyperspace
-from core.world import generate_stars, WIDTH, HEIGHT
-from core.save import save
-from render import title, story, galaxy, system as system_render, jumppoint, hyperspace, hud
-from render import planet, location, market, inventory, messages, missions, mission_log, gameover
-from render import combat as combat_render
+from core import travel
+from render import story, ui
+from render.screen import compose
+from render_classic import screen as classic_screen
 
-MUSIC_PATH = Path("sfx/music")
+MUSIC_FOLDER = "sfx/music"
+TITLE_TRACK = "sfx/music/MyVeryOwnDeadShip.ogg"
 
-music_tracks = list(MUSIC_PATH.glob("*.ogg"))
+
+def update_music():
+    """Title theme on the title screen, silence for the story, then a
+    shuffled playlist of the other tracks for the rest of the game."""
+    gs = state.game_state
+    if gs == "TITLE":
+        audio.ensure_music(TITLE_TRACK)
+    elif gs == "STORY":
+        if audio.current_music_path:
+            audio.stop_music()
+    else:
+        audio.ensure_playlist(MUSIC_FOLDER, exclude=[TITLE_TRACK])
+    audio.update()
 
 def load_text(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -27,7 +40,12 @@ def load_text(path):
 
 
 def main():
-    console = tcod.console.Console(WIDTH, HEIGHT)
+    # Whole window: 80x60 map viewport + frame + 38-column sidebar
+    console = tcod.console.Console(ui.SCREEN_W, ui.SCREEN_H)
+    # The map viewport uses the same 80x60 size the world is generated for
+    map_console = tcod.console.Console(ui.MAP_W, ui.MAP_H)
+    # The classic (original) UI draws everything on one 80x60 console
+    classic_console = tcod.console.Console(classic_screen.WIDTH, classic_screen.HEIGHT)
 
     state.story_texts = [
         load_text("story1.txt"),
@@ -35,21 +53,15 @@ def main():
     ]
     title_text = load_text("title.txt")
 
-    # track = random.choice(music_tracks)
+    # Galaxy from --seed N (or a new random one); the economy is built too.
+    # The title screen can also load the last seed (L) or type one (S).
+    newgame.startup()
 
-    audio.play_music("sfx/music/MyVeryOwnDeadShip.ogg")
-
-    state.stars, galaxy_seed = generate_stars()
-    stars = state.stars
-    state.galaxy_seed = galaxy_seed
-    save(galaxy_seed)
-
-    tileset = tcod.tileset.load_tilesheet(
-        "Haberdash_curses_12x12.png", 16, 16, tcod.tileset.CHARMAP_CP437
-    )
+    # Font: a sans-serif tilesheet by default; F10 cycles presets (core/fonts.py)
+    _, tileset = fonts.load()
 
     if state.DEBUG:
-        for star in stars:
+        for star in state.stars:
             if star.name == "Sol":
                 state.current_star = star
                 state.current_system = star.system
@@ -59,79 +71,41 @@ def main():
         state.game_state = state.DEBUG_SCREEN
 
     state.last_story_time = time.time()
-    last_frame_time = time.time()
 
     with tcod.context.new(
-        columns=WIDTH,
-        rows=HEIGHT,
+        columns=ui.SCREEN_W,
+        rows=ui.SCREEN_H,
         title="Space Rogue",
         tileset=tileset,
         sdl_window_flags=tcod.context.SDL_WINDOW_RESIZABLE,
     ) as context:
 
+        frame_time = 1 / 60
         while True:
-            console.clear()
-
+            frame_start = time.perf_counter()
             story_text = state.story_texts[state.story_index] if state.story_index < len(state.story_texts) else ""
 
-            # --- Per-state update + draw ---------------------------------
-
-            if state.game_state == "TITLE":
-                title.draw(console, WIDTH, HEIGHT, title_text)
-
-            elif state.game_state == "STORY":
+            # --- Per-state updates ------------------------------------------
+            if state.game_state == "STORY":
                 story.update(story_text)
-                audio.stop_music()
-                story.draw(console, HEIGHT, story_text)
-
-            elif state.game_state == "GALAXY":
-                galaxy.draw(console, WIDTH, HEIGHT, stars)
-
-            elif state.game_state == "SYSTEM":
-                system_render.draw(console, WIDTH, HEIGHT, state.current_system)
-
-            elif state.game_state == "JUMPPOINT":
-                jumppoint.draw(console, WIDTH, HEIGHT)
-
             elif state.game_state == "HYPERSPACE":
                 update_hyperspace()
-                hyperspace.draw(console, WIDTH, HEIGHT)
+            travel.update_autopilot()
+            tutorial.update()
+            update_music()
 
-            elif state.game_state == "PLANET":
-                planet.draw(console)
-
-            elif state.game_state == "LOCATION":
-                location.draw(console, WIDTH)
-
-            elif state.game_state == "MARKET":
-                market.draw(console, WIDTH)
-
-            elif state.game_state == "INVENTORY":
-                inventory.draw(console, WIDTH)
-            
-            elif state.game_state == "MESSAGES":
-                messages.draw(console, WIDTH, HEIGHT)
-
-            elif state.game_state == "MISSION_LOG":
-                mission_log.draw(console, WIDTH)
-
-            elif state.game_state == "MISSIONS":
-                missions.draw(console, WIDTH)
-
-            elif state.game_state == "COMBAT":
-                combat_render.draw(console, WIDTH, HEIGHT)
-
-            elif state.game_state == "GAME_OVER":
-                gameover.draw(console, WIDTH, HEIGHT)
-
-            hud.draw(console, WIDTH, HEIGHT)
-
-            context.present(console, keep_aspect=True)
+            # --- Draw ---------------------------------------------------------
+            if fonts.ui_mode() == "classic":
+                classic_screen.compose(classic_console, state.stars, title_text, story_text)
+                context.present(classic_console, keep_aspect=True, integer_scaling=False)
+            else:
+                compose(console, map_console, state.stars, title_text, story_text)
+                context.present(console, keep_aspect=True, integer_scaling=False)
 
             # --- Events ----------------------------------------------------
-
             for event in tcod.event.get():
                 if isinstance(event, tcod.event.Quit):
+                    audio.shutdown()
                     raise SystemExit()
 
                 # Special case: leaving STORY for the first time needs to
@@ -144,13 +118,18 @@ def main():
                     and state.current_star is None
                     and state.story_index >= len(state.story_texts) - 1  # only on last story
                 ):
-                    for star in stars:
+                    for star in state.stars:
                         if star.name == "Sol":
                             state.current_star = star
                             state.current_system = star.system
                             break
 
                 handle_event(event, story_text, context)
+
+            # Cap at ~60 FPS so the loop doesn't spin a CPU core at 100%
+            spare = frame_time - (time.perf_counter() - frame_start)
+            if spare > 0:
+                time.sleep(spare)
 
 
 if __name__ == "__main__":

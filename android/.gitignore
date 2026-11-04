@@ -1,0 +1,10 @@
+.buildozer/
+bin/
+__pycache__/
+*.pyc
+settings.json
+save.json
+.venv/
+build.log
+crash.log
+crash.log.native

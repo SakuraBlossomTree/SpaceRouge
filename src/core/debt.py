@@ -15,6 +15,10 @@ ESCALATION = {
 def advance_day():
     """Called every time a day passes. Checkd if payment is due."""
     state.day += 1
+
+    # the galaxy economy moves on: NPC trades, prices, stocks, news
+    from core import economy
+    economy.tick()
     
     if state.day >= state.next_payment_day:
         _process_payment()
