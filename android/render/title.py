@@ -61,27 +61,28 @@ def draw(console, width, height, title_text):
             fg = ui.scale_color(ui.lerp_color(LOGO_TOP, LOGO_BOTTOM, k), shimmer)
             console.print(lx + j, ly + i, ch, fg=fg, bg=ui.BG)
 
-    tag = "A TRADER'S ROGUELIKE  ·  250,000 CREDITS IN DEBT  ·  ONE SHIP"
+    tag = "A TRADER'S ROGUELIKE  ·  75,000 CREDITS IN DEBT  ·  ONE SHIP"
     ui.center(console, width // 2, ly + len(lines) + 1, tag, fg=ui.DIM, bg=ui.BG)
 
     # menu box
     bw, bh = 54, 13
     bx, by = (width - bw) // 2, ly + len(lines) + 5
-    ui.frame(console, bx, by, bw, bh, fg=ui.BORDER, bg=(10, 14, 28))
+    panel = (10, 14, 28)
+    ui.frame(console, bx, by, bw, bh, fg=ui.BORDER, bg=panel)
     pulse = 0.6 + 0.4 * (math.sin(t * 4) + 1) / 2
     ui.center(console, width // 2, by + 2, "►  NEW GAME  ◄",
-              fg=ui.scale_color(ui.KEY, pulse), bg=(10, 14, 28))
+              fg=ui.scale_color(ui.KEY, pulse), bg=panel)
+
     ui.hint_row_centered(console, width // 2, by + 4,
                          [("ENTER", "Start"), ("F11", "Fullscreen"), ("Q", "Quit")],
-                         bg=(10, 14, 28))
+                         bg=panel)
     on = tutorial.enabled()
     ui.hint_row_centered(console, width // 2, by + 6,
                          [("T", f"Tutorial: {'ON ' if on else 'OFF'}"),
                           ("F10", f"Font: {fonts.current_name()}")],
-                         bg=(10, 14, 28))
+                         bg=panel)
 
     # galaxy seed: S to type one, L to replay last run's galaxy
-    panel = (10, 14, 28)
     ui.hline(console, bx, by + 8, bw, fg=ui.BORDER, bg=panel)
     if state.seed_input is not None:
         cursor = "█" if int(t * 2) % 2 == 0 else " "
@@ -101,5 +102,5 @@ def draw(console, width, height, title_text):
     muted = audio.music_muted()
     x = ui.key_hint(console, 2, height - 2, "F4", "Music: OFF" if muted else "Music: ON",
                     bg=ui.BG, label_fg=ui.BAD if muted else ui.DIM)
-    ui.right(console, width - 2, height - 2, "v0.1 · mobile build",
+    ui.right(console, width - 2, height - 2, "v0.1 · made with python-tcod",
              fg=ui.FAINT, bg=ui.BG)

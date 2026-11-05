@@ -16,6 +16,7 @@ from effects.effects import twinkle_color
 from render import ui
 
 LINK_FG = (75, 115, 155)
+LINK2_FG = (50, 78, 105)       # links two or more jumps out (Star Jump Scanner)
 DEBUG_LINK_FG = (45, 45, 60)
 NAME_FG = (95, 110, 140)
 LINKED_FG = (130, 160, 195)
@@ -204,59 +205,6 @@ def draw(console, width, height, stars):
             return
         state.galaxy_preview = None
     t = time.time()
-    key = _static_key(console, stars)
-    if key != _static["key"]:
-        _draw_static(console, width, height, stars)
-        _static["key"] = key
-        _static["rgb"] = console.rgb.copy()
-    else:
-        console.rgb[:] = _static["rgb"]       # one numpy copy instead of ~300 prints
-
-    # --- animated bits on top of the cached chart -------------------------------
-    fg_a, bg_a = console.rgb["fg"], console.rgb["bg"]
-    for sx, sy, base, i in _static["stars"]:
-        fg_a[sy, sx] = twinkle_color(base, t, speed=5.0, phase=i * 1.3)
-    if _static["you"] is not None:
-        sx, sy, under = _static["you"]
-        blink = int(t * 2) % 2 == 0
-        fg_a[sy, sx] = (0, 0, 0) if blink else ui.PLAYER
-        bg_a[sy, sx] = ui.PLAYER if blink else under
-
-    # --- scan cursor (always live) -------------------------------------------------------------
-    state.look_object = None
-    if state.look_mode:
-        cx, cy = view.project(state.look_x, state.look_y)
-        state.look_object = view.star_at_cell(stars, cx, cy)
-        if view.on_screen(cx, cy):
-            blink = int(t * 3) % 2 == 0
-            ch = int(console.rgb["ch"][cy, cx])
-            glyph = "+" if ch in (0, 32) else chr(ch)
-            console.print(cx, cy, glyph, fg=(0, 0, 0),
-                          bg=ui.KEY if blink else (150, 110, 30))
-
-
-# The chart is cached: everything except the twinkling stars, the blinking
-# "@" and the scan cursor only changes when the camera moves, you travel, a
-# contract changes or a day passes. Rebuilding it costs ~300 single-cell
-# prints of Python - on a phone that was most of each frame's time.
-_static = {"key": None, "rgb": None, "stars": [], "you": None}
-
-
-def _static_key(console, stars):
-    return (console.width, console.height, len(stars),
-            round(state.galaxy_cam_x, 3), round(state.galaxy_cam_y, 3), state.galaxy_zoom,
-            view.VIEW_W, view.VIEW_H, MINIMAP_INSET,
-            state.galaxy_routes, state.galaxy_minimap, state.DEBUG, state.day,
-            getattr(state.current_star, "name", None),
-            getattr(state.current_system, "name", None),
-            state.mission_nav_target,
-            tuple((m.dest_system, m.status) for m in state.missions))
-
-
-def _draw_static(console, width, height, stars):
-    """Draw the whole chart with stars in their base colours, then note which
-    star cells (and the "@") are still visible so draw() can animate them."""
-    t = 0.0
     s = view.scale()
     star_map = {star.name: star for star in stars}
     proj = {star.name: view.project(star.x, star.y) for star in stars}
@@ -285,14 +233,13 @@ def _draw_static(console, width, height, stars):
                 drawn.add(pair)
                 _line(console, *proj[star.name], *proj[jp.destination], "·", DEBUG_LINK_FG)
 
-    linked = set()
-    if state.current_system and state.current_star:
-        for jp in state.current_system.jump_points:
-            if jp.destination not in proj:
-                continue
-            linked.add(jp.destination)
-            _line(console, *proj[state.current_star.name], *proj[jp.destination],
-                  "·", LINK_FG)
+    # The Star Jump Scanner (shipyard) decides how many jumps of links you see:
+    # 1 to start, one more per level. Links further out are drawn dimmer.
+    from core import shipyard
+    edges, linked = view.jump_links(stars, shipyard.jump_view_range())
+    for a, b, level in sorted(edges, key=lambda e: -e[2]):   # near links drawn last
+        if a in proj and b in proj:
+            _line(console, *proj[a], *proj[b], "·", LINK_FG if level == 1 else LINK2_FG)
 
     # --- contract targets ------------------------------------------------------
     targets = {m.dest_system for m in state.missions if m.status == "active"}
@@ -331,24 +278,23 @@ def _draw_static(console, width, height, stars):
         i, star = item
         return (star.name in targets) + (star.name in linked)
 
-    drawn = []
     for i, star in sorted(enumerate(stars), key=priority):
         sx, sy = proj[star.name]
         if not view.on_screen(sx, sy):
             continue
         base = ui.vivid(STAR_TYPES[star.type]["color"])
+        color = twinkle_color(base, t, speed=5.0, phase=i * 1.3)
         glyph = "☼" if star.name in targets else ("*" if s >= 1.0 else "☼")
-        _put(console, sx, sy, glyph, base)
-        drawn.append((sx, sy, glyph, base, i))
+        _put(console, sx, sy, glyph, color)
 
     # --- current position ----------------------------------------------------
-    you = None
     if state.current_star:
         cs = state.current_star
         sx, sy = proj[cs.name]
         if view.on_screen(sx, sy):
-            you = (sx, sy, tuple(int(v) for v in console.rgb["bg"][sy, sx]))
-            _put(console, sx, sy, "@", ui.PLAYER)
+            blink = int(t * 2) % 2 == 0
+            _put(console, sx, sy, "@", (0, 0, 0) if blink else ui.PLAYER,
+                 ui.PLAYER if blink else None)
         else:
             # off-screen: arrow on the edge pointing toward home
             cx, cy = max(0, min(width - 1, sx)), max(0, min(height - 2, sy))
@@ -360,14 +306,17 @@ def _draw_static(console, width, height, stars):
         _draw_minimap(console, stars, targets)
     _draw_zoom_bar(console)
 
-
-    # keep only the animated cells that the overlays didn't cover
-    ch_a, fg_a = console.rgb["ch"], console.rgb["fg"]
-    _static["stars"] = [(sx, sy, base, i) for sx, sy, glyph, base, i in drawn
-                        if int(ch_a[sy, sx]) == ord(glyph)
-                        and tuple(int(v) for v in fg_a[sy, sx]) == tuple(base)
-                        and (you is None or (sx, sy) != you[:2])]
-    _static["you"] = you if you is not None and int(ch_a[you[1], you[0]]) == ord("@") else None
+    # --- scan cursor -------------------------------------------------------------
+    state.look_object = None
+    if state.look_mode:
+        cx, cy = view.project(state.look_x, state.look_y)
+        state.look_object = view.star_at_cell(stars, cx, cy)
+        if view.on_screen(cx, cy):
+            blink = int(t * 3) % 2 == 0
+            ch = int(console.rgb["ch"][cy, cx])
+            glyph = "+" if ch in (0, 32) else chr(ch)
+            console.print(cx, cy, glyph, fg=(0, 0, 0),
+                          bg=ui.KEY if blink else (150, 110, 30))
 
 
 # ---------------------------------------------------------------------------
@@ -377,12 +326,25 @@ def _draw_static(console, width, height, stars):
 PREVIEW_OX, PREVIEW_OY = 5, 6       # system map (0..70 x 0..50) inside the viewport
 GATE_FG = (90, 210, 220)
 
+# Maximum number of jump-gate hops from the player's current system for which
+# a full system preview is available. Set this to 2 when a future scanner
+# upgrade increases the player's preview range.
+SYSTEM_PREVIEW_JUMP_RANGE = 2
+
+
+def configure_preview_range(jump_range):
+    """Set the maximum preview distance in jump-gate hops (0 = current only)."""
+    global SYSTEM_PREVIEW_JUMP_RANGE
+    SYSTEM_PREVIEW_JUMP_RANGE = max(0, int(jump_range))
+
 
 def jumps_between(stars, a, b):
     """Fewest jump-gate hops from system a to system b (None if unreachable)."""
     if a == b:
         return 0
     by_name = {s.name: s for s in stars}
+    if a not in by_name or b not in by_name:
+        return None
     seen, frontier, hops = {a}, [a], 0
     while frontier:
         hops += 1
@@ -435,6 +397,14 @@ def preview_rows(star, stars):
     ]
     if contracts:
         rows.append(("Contracts here", str(contracts), ui.KEY))
+    if not here and here_name and view.scanner_covers(star, stars):
+        from core import travel
+        est = travel.route_estimate(stars, here_name, star.name)
+        if est is None:
+            rows.append(("Autopilot fuel", "no route", ui.BAD))
+        else:
+            jumps, fuel = est
+            rows.append(("Autopilot fuel", f"~{fuel} fuel, {jumps} jump{'s' if jumps != 1 else ''}", ui.KEY))
     return rows
 
 
@@ -454,8 +424,62 @@ def _draw_preview_card(console, height, star, stars):
         ui.kv(console, x0 + 2, y0 + 2 + len(lines) + i, w - 4, k, v, value_fg=fg, bg=bg)
 
 
+def _system_preview_available(star, stars):
+    """Show system maps up to SYSTEM_PREVIEW_JUMP_RANGE gates from the player."""
+    current = state.current_system
+    if current is None:
+        return bool(state.current_star and state.current_star.name == star.name)
+    if star.name == current.name:
+        return True
+
+    hops = jumps_between(stars, current.name, star.name)
+    return hops is not None and hops <= SYSTEM_PREVIEW_JUMP_RANGE
+
+
+def _draw_no_data_preview(console, width, height, star):
+    """Display a generic database screen when the system is beyond one jump."""
+    bg = (10, 14, 28)
+    console.draw_rect(0, 0, width, height, ord(" "), bg=(6, 9, 17))
+
+    # Keep the selected system identifiable without exposing its contents.
+    _text(console, 2, 1, "SYSTEM DATABASE", ui.DIM, bg)
+    name = f"☼ {star.name}"
+    _text(console, max(2, width - len(name) - 2), 1, name, ui.FAINT, bg)
+
+    panel_w = min(48, max(20, width - 4))
+    panel_h = 9
+    x0 = max(1, (width - panel_w) // 2)
+    y0 = max(3, (height - panel_h) // 2)
+    ui.frame(console, x0, y0, panel_w, panel_h, "SURVEY DATABASE",
+             fg=ui.BORDER_HI, bg=bg)
+
+    message = "NO DATA AVAILABLE"
+    _text(console, max(0, (width - len(message)) // 2), y0 + 2,
+          message, ui.BAD, bg)
+    detail = "No survey records are available for this system."
+    _text(console, max(0, (width - len(detail)) // 2), y0 + 4,
+          detail, ui.TEXT, bg)
+    if SYSTEM_PREVIEW_JUMP_RANGE == 0:
+        hint_text = "Only your current system has available survey data."
+    else:
+        unit = "jump" if SYSTEM_PREVIEW_JUMP_RANGE == 1 else "jumps"
+        hint_text = f"System previews are available within {SYSTEM_PREVIEW_JUMP_RANGE} {unit}."
+    _text(console, max(0, (width - len(hint_text)) // 2), y0 + 5,
+          hint_text, ui.FAINT, bg)
+
+    _draw_zoom_bar(console, routes=False)
+    hint = "[-] Back  [TAB] Next  [M] Close"
+    _text(console, width - len(hint) - 1, height - 1, hint, ui.FAINT)
+    state.look_object = star
+
+
 def draw_preview(console, width, height, star, stars, card=False):
-    from render.system import _background
+    # The galaxy chart remains unchanged; detailed system data is local to
+    # the current system and its directly connected jump destinations.
+    if not _system_preview_available(star, stars):
+        _draw_no_data_preview(console, width, height, star)
+        return
+
     from effects.effects import get_spin_frame
 
     t = time.time()

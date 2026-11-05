@@ -2,7 +2,7 @@
 
     left side    D-pad (hold to repeat, for flying) with OK / Back above it
     right side   icon bar  - Galaxy, Contracts, Cargo, Exchange, Log, Help
-                 status    - hull & fuel bars, credits, cargo, day, next payment,
+                 status    - hull & fuel bars, credits, cargo, day, loan deadline,
                              where you are / what's in range
                  buttons   - whatever the current screen needs (Dock, Buy, ...)
     bottom       new messages pop up briefly
@@ -50,7 +50,7 @@ ICON_BAR = [
     ("log", "Log", "L", "MESSAGES"),
     ("help", "Help", "H", "HELP"),
 ]
-NO_ICONS = ("TITLE", "STORY", "GAME_OVER", "HYPERSPACE", "COMBAT")
+NO_ICONS = ("TITLE", "STORY", "GAME_OVER", "VICTORY", "HYPERSPACE", "COMBAT")
 
 
 def _context_buttons():
@@ -71,6 +71,11 @@ def _context_buttons():
                 ("Skip", "SPACE"), ("Next", "RETURN")]
     if gs == "GAME_OVER":
         return [("Quit", "Q")]
+    if gs == "VICTORY":
+        return [("Keep playing", "RETURN"), ("Quit", "Q")]
+    if gs == "LOCATION" and state.debt_input is not None:
+        return [(str(d), f"N{d}") for d in (1, 2, 3, 4, 5, 6, 7, 8, 9, 0)] + \
+               [("Del", "BACKSPACE"), ("Max", "M"), ("Pay", "RETURN"), ("Cancel", "ESCAPE")]
 
     tips = []
     if state.tutorial_active and gs not in tutorial.HIDDEN_STATES:
@@ -89,13 +94,15 @@ def _context_buttons():
                    ("Stop scan" if look else "Scan", "X"), ("Next star", "TAB"),
                    ("Routes", "R"), ("Minimap", "N")],
         "JUMPPOINT": [("Jump", "RETURN"), ("Cancel", "ESCAPE")],
-        "LOCATION": [("Open", "RETURN"), ("1 Trade", "N1"), ("3 Missions", "N3"),
-                     ("5 Refuel", "N5"), ("Undock", "ESCAPE")],
+        "LOCATION": [("Open", "RETURN"), ("1 Trade", "N1"), ("2 Shipyard", "N2"),
+                     ("3 Missions", "N3"), ("5 Refuel", "N5"), ("6 Pay Debt", "N6"),
+                     ("Undock", "ESCAPE")],
+        "SHIPYARD": [("Up", "UP"), ("Down", "DOWN"), ("Buy", "RETURN"), ("Back", "ESCAPE")],
         "MARKET": [("Buy", "B"), ("Sell", "S"), ("Back", "ESCAPE")],
         "MISSIONS": [("Accept / Deliver", "RETURN"), ("Show on map", "V"), ("Back", "ESCAPE")],
         "COMBAT": [("Confirm", "RETURN")],
-        "EXCHANGE": [("Overview", "N1"), ("Companies", "N2"), ("Routes", "N3"),
-                     ("Goods", "N4")],
+        "EXCHANGE": [("Overview", "N1"), ("Markets", "N2"), ("Goods", "N3"),
+                     ("Routes", "N4")],
         "HYPERSPACE": [],
     }
     return table.get(gs, []) + tips
@@ -404,10 +411,10 @@ class TouchControls:
         surf.blit(t, (x + w - t.get_width(), y))
 
         y = r.y + line * 4.85
-        days = state.next_payment_day - state.day
-        due_c = BAD if days <= 1 else WARN if days <= 3 else DIM
+        days = state.loan_deadline_day - state.day
+        due_c = BAD if days <= 7 else WARN if days <= 30 else DIM
         self._text(surf, f"Day {state.day}", fs, DIM, topleft=(x, y), alpha=a)
-        t = self._render(f"Pay {state.weekly_payment:,} in {max(0, days)}d", fs, due_c, a)
+        t = self._render(f"Debt {state.debt:,} · {max(0, days)}d left", fs, due_c, a)
         surf.blit(t, (x + w - t.get_width(), y))
 
         y = r.y + line * 6.0
@@ -451,7 +458,7 @@ class TouchControls:
         layout = (self._ctx_key, state.game_state, round(opacity(), 2))
         held = tuple(sorted(id(h[0]) for h in self.held.values()))
         stats = (ship.hull, int(state.fuel), state.credits, state.inventory.used_space(),
-                 state.day, state.next_payment_day, state.weekly_payment, where)
+                 state.day, state.loan_deadline_day, state.debt, where)
         return (layout, held, stats, toast)
 
     def dirty(self):

@@ -1,56 +1,48 @@
-'''Debt and loan repayment system.'''
+"""The loan: one number the player pays down whenever they like, by a deadline.
+
+There are no instalments. Money goes in through the Pay Debt panel at any
+station (core/events.py: _pay_debt). If the debt is not cleared by
+state.loan_deadline_day the lender repossesses the ship (game over); clearing
+it shows the victory screen. The old weekly-instalment system is archived in
+core/debt_installments.py.
+"""
 
 from core import state
 
-INTREST_RATE = 0.02 # 2% per missed payment
+WARN_AT = (90, 30, 14, 7, 3, 1)      # days left at which the lender sends a reminder
 
-# Escalation messages per missed payment count
-ESCALATION = {
-    1: "WARNING: You have missed a loan payment. Pay immediately.",
-    2: "Your interest rate has increased due to missed payments.",
-    3: "Debt collectors have been dispatched to find you.",
-    4: "Bounty hunters have been hired to collect your debt.",
-}
+
+def days_left():
+    """Days until the lender wants the ship (0 or less = deadline reached)."""
+    return state.loan_deadline_day - state.day
+
 
 def advance_day():
-    """Called every time a day passes. Checkd if payment is due."""
+    """Called every time a day passes."""
     state.day += 1
 
-    # the galaxy economy moves on: NPC trades, prices, stocks, news
+    # the galaxy economy moves on (NPC trades, prices, stocks, news), but in
+    # steps of PRICE_UPDATE_DAYS so prices hold still between updates
     from core import economy
-    economy.tick()
-    
-    if state.day >= state.next_payment_day:
-        _process_payment()
+    if state.day % economy.PRICE_UPDATE_DAYS == 0:
+        economy.tick(economy.PRICE_UPDATE_DAYS)
 
-def _process_payment():
-    """Try to take the weekly payment from the player."""
-    if state.credits >= state.weekly_payment:
-        # Player can afford it
-        state.credits -= state.weekly_payment
-        state.debt = max(0, state.debt - state.weekly_payment)
-        state.missed_payments = 0
-        state.add_message(f"Loan payment of {state.weekly_payment} credits deducted.")
+    left = days_left()
+    if state.debt > 0 and left in WARN_AT:
+        state.add_message(f"WARNING: the lender wants the loan back in {left} day"
+                          f"{'s' if left != 1 else ''}.")
 
-        if state.debt == 0:
-            state.add_message("Your loan is fully paid off. You own your ship!")
 
-    else:
-        # Player can't afford it
-        state.missed_payments += 1
-
-        # Apply interest 
-        interest = int(state.debt * INTREST_RATE)
-        state.debt += interest
-        state.weekly_payment = int(state.weekly_payment * (1 + INTREST_RATE))
-
-        msg = ESCALATION.get(state.missed_payments, ESCALATION[4])
-        state.add_message(msg)
-        state.add_message(f"Interest added: {interest} credits. Debt is now {state.debt}.")
-
-        if state.missed_payments >= 4:
-            state.game_over_reason = "Bounty hunters caught up with you. Your debt went unpaid."
-            state.game_state = "GAME_OVER"
-
-    # Schedule next payment
-    state.next_payment_day = state.day + 7
+def check_deadline():
+    """Game over once the deadline passes with debt left. Returns True if it
+    ended the run. Called after a jump lands and after the move clock ticks
+    (not inside advance_day: the jump animation would overwrite the screen)."""
+    if state.debt <= 0 or state.game_state in ("GAME_OVER", "VICTORY"):
+        return False
+    if days_left() > 0:
+        return False
+    state.autopilot = None
+    state.game_over_reason = ("The lender repossessed the Rogue: the loan "
+                              "wasn't repaid in time.")
+    state.game_state = "GAME_OVER"
+    return True

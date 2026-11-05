@@ -290,6 +290,28 @@ def menu_row(console, x, y, w, label, *, selected=False, key=None,
                       fg=suffix_fg or (DIM if enabled else FAINT), bg=bg)
 
 
+def tab_strip(console, x, y, w, tabs, active, hint="TAB ► next"):
+    """A row of tabs, e.g. the docked-station screens. tabs: (key, label, id,
+    suffix); the one whose id == active is highlighted. Keys may be ''."""
+    console.draw_rect(x, y, w, 1, ord(" "), bg=PANEL_BG)
+    cx = x + 1
+    for key, label, tab_id, suffix in tabs:
+        on = tab_id is not None and tab_id == active
+        bg = SEL_BG if on else PANEL_BG
+        text = f" {key} {label}" if key else f" {label}"
+        if suffix:
+            text += f" {suffix}"
+        text += " "
+        console.print(cx, y, text, fg=SEL_FG if on else DIM, bg=bg)
+        if key:
+            console.print(cx + 1, y, key, fg=KEY, bg=bg)
+        cx += len(text)
+        console.print(cx, y, "│", fg=BORDER, bg=PANEL_BG)
+        cx += 1
+    if hint and cx + len(hint) + 1 < x + w:
+        console.print(x + w - len(hint) - 1, y, hint, fg=FAINT, bg=PANEL_BG)
+
+
 def scrollbar(console, x, y, h, offset, visible, total, fg=BORDER, bg=None):
     """Thin vertical scrollbar; drawn only when content overflows."""
     if total <= visible or h <= 0:

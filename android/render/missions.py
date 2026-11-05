@@ -32,6 +32,9 @@ def draw(console, width, height=ui.MAP_H):
     loc = state.current_location
     x, y = ui.window(console, W, H, "Missions Board",
                      right_title=loc.name if loc else "")
+    if loc is not None:
+        from render.location import station_tabs
+        station_tabs(console, x, y - 2, W)
     ix = x + 2
 
     # vertical divider
@@ -98,4 +101,4 @@ def draw(console, width, height=ui.MAP_H):
 
     ui.hint_row_centered(console, x + W // 2, y + H - 2,
                          [("↑↓", "Select"), ("ENTER", "Accept/Deliver"),
-                          ("V", "Show on map"), ("ESC", "Back")])
+                          ("V", "Map"), ("TAB", "Next"), ("ESC", "Station")])

@@ -51,48 +51,57 @@ def _snapshot():
 STEPS = [
     ("Welcome aboard, pilot",
      "That's you: the yellow @ in the Sol system. The panels on the right "
-     "show your ship, your loan and the comms log.",
+     "show your ship, your loan and the comms log. You have 365 days to "
+     "pay off the 75,000 loan.",
      "info", None),
     ("Take the helm",
-     "Use the arrow keys to fly. Every move burns a little fuel, and 50 moves "
-     "make one day.",
+     "Use the arrow keys to fly - it's free, but every 50 moves make a day. TAB is the "
+     "autopilot: it flies you to the next planet, station or gate.",
      "do", _moved),
     ("Dock at Earth",
-     "Fly onto Earth (the blue ○ marked on the map) and press ENTER to dock.",
+     "Fly onto Earth (the blue ○ on the map) - or press TAB until the "
+     "autopilot heads there - and press ENTER to dock.",
      "do", lambda: state.game_state == "LOCATION"),
     ("Visit the Trading Post",
      "Press 1, or select Trading Post and press ENTER.",
      "do", lambda: state.game_state == "MARKET"),
     ("Buy some cargo",
      "Pick a good with ↑↓ and press → or B to buy one. Goods marked ▼ low are "
-     "cheap here - sell them where they show ▲ high.",
+     "cheap here - sell them where they show ▲ high (stations pay 90% of the price).",
      "do", _bought),
     ("Find work",
-     "Press ESC to go back to the station menu, then open the Missions Board (3).",
+     "Press 3 (or TAB) to go straight to the Missions Board. 1, 3 and 5 work "
+     "on every station screen.",
      "do", lambda: state.game_state == "MISSIONS"),
     ("Take a contract",
      "Select a contract and press ENTER to accept it. Fly the cargo to its "
-     "destination and deliver it there to get paid.",
+     "destination and deliver it there to get paid. Contract cargo can't be sold.",
      "do", _took_contract),
+    ("Check your hold",
+     "Press I to open the cargo hold. Contract cargo is listed on its own "
+     "rows, tagged with the system it came from - it can only be delivered.",
+     "do", lambda: state.game_state == "INVENTORY"),
     ("Open the galaxy chart",
-     "Press ESC twice to undock, then press M to open the galaxy chart.",
+     "Press M to open the galaxy chart - it works from anywhere, even while "
+     "docked, and M again brings you back.",
      "do", lambda: state.game_state == "GALAXY"),
     ("Zoom and scroll",
      "Zoom with + / - or the mouse wheel and scroll with the arrows. Your "
      "contract's destination is marked ☼; C centres on you.",
      "do", _used_chart),
     ("Find a jump gate",
-     "Press M to close the chart. Fly onto a Θ jump gate and press ENTER to "
-     "see where it leads (ESC backs out).",
+     "Close the chart (M), undock (ESC), then fly onto a Θ jump gate (TAB "
+     "helps) and press ENTER to see where it leads and how much fuel it needs.",
      "do", lambda: state.game_state == "JUMPPOINT"),
     ("Mind the loan",
-     "Jumps cost a toll and a day. Every 7 days an instalment is taken from "
-     "your credits - miss four and the bounty hunters come. Press H any time "
-     "for the Pilot's Handbook. Good luck!",
+     "Jumps cost fuel and a day. The lender wants the loan back in a year - "
+     "pay any amount at a station (6: Pay Debt) and clear it to win. Press H any time "
+     "for the Pilot's Handbook, and SPACE for the quick menu (every screen "
+     "and every place in the system). Good luck!",
      "info", None),
 ]
 
-HIDDEN_STATES = ("TITLE", "STORY", "GAME_OVER", "HYPERSPACE", "COMBAT")
+HIDDEN_STATES = ("TITLE", "STORY", "GAME_OVER", "VICTORY", "HYPERSPACE", "COMBAT")
 
 
 def enabled():

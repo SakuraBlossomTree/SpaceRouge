@@ -31,7 +31,7 @@ Nothing here draws anything; render/exchange.py shows it.
 
 import math
 import random
-from collections import defaultdict, deque
+from collections import defaultdict, deque, namedtuple
 
 from core import state
 from core.world import COMMODITIES, BASE_PRICES, FACTIONS
@@ -46,11 +46,37 @@ MIN_SUPPLY = 12.0
 PRICE_CLAMP = (0.45, 2.6)
 
 PLAN_DEPTH = 3        # jumps an NPC trader looks ahead
+SCAN_DEPTH = 1        # base jumps of price data in the Galactic Exchange (shipyard upgrades add more)
+
+
+def scan_depth():
+    """Current Exchange scan range in jumps (base + shipyard upgrades)."""
+    from core import shipyard
+    return shipyard.exchange_depth()
+PRICE_BAND = 0.15     # ±15% vs the regional average counts as cheap/dear
 HISTORY = 120         # days of history kept for charts
 ROUTE_WINDOW = 7      # days of traffic that make a "trade route"
 WARMUP_DAYS = 60      # simulated before day 1 so charts have history
 CALIBRATE_DAY = -45   # stocks start trading here (earlier days just settle prices)
 EVENT_CHANCE = 0.28   # chance of a news event per day
+
+# One profitable nearby trade: buy at buy_market, sell at sell_market.
+Trade = namedtuple(
+    "Trade",
+    "good buy_price buy_market buy_system buy_jumps "
+    "sell_price sell_market sell_system sell_jumps hops profit",
+)
+
+
+def price_band(price, reference):
+    """-1 = cheap, 0 = fair, 1 = dear compared with a reference price."""
+    if not reference:
+        return 0
+    if price <= reference * (1 - PRICE_BAND):
+        return -1
+    if price >= reference * (1 + PRICE_BAND):
+        return 1
+    return 0
 
 SECTORS = {
     "Shipping":      [],
@@ -206,6 +232,7 @@ class Economy:
         self.losses_today = 0
         self.effects = []          # active news effects
         self.news = []             # (day, text, kind)
+        self.trade_news = []       # market-relevant subset for the Exchange
         self.composite = []        # composite index history
         self.avg_history = {c: [] for c in COMMODITIES}
         self.pending = defaultdict(float)  # cargo already headed to (market, good)
@@ -304,21 +331,22 @@ class Economy:
             return None
         return self._by_dict.get(id(location.market))
 
-    def _bfs(self, start):
-        if start not in self._bfs_cache:
+    def _bfs(self, start, depth=PLAN_DEPTH):
+        key = (start, depth)
+        if key not in self._bfs_cache:
             dist, parent = {start: 0}, {start: None}
             q = deque([start])
             while q:
                 n = q.popleft()
-                if dist[n] >= PLAN_DEPTH:
+                if dist[n] >= depth:
                     continue
                 for m in self.adj.get(n, ()):
                     if m not in dist:
                         dist[m] = dist[n] + 1
                         parent[m] = n
                         q.append(m)
-            self._bfs_cache[start] = (dist, parent)
-        return self._bfs_cache[start]
+            self._bfs_cache[key] = (dist, parent)
+        return self._bfs_cache[key]
 
     @staticmethod
     def _path(parent, dest):
@@ -327,6 +355,97 @@ class Economy:
             path.append(dest)
             dest = parent[dest]
         return list(reversed(path))
+
+    def systems_within(self, start, depth=None):
+        """{system: jumps} for the start system and everything nearby."""
+        depth = scan_depth() if depth is None else depth
+        if not start or start not in self.stars:
+            return {}
+        return dict(self._bfs(start, depth)[0])
+
+    def nearby_markets(self, start, depth=None):
+        """[(jumps, system, MarketState)] visible from the start system."""
+        rows = []
+        for sname, jumps in self.systems_within(start, depth).items():
+            for ms in self.markets_in.get(sname, ()):
+                rows.append((jumps, sname, ms))
+        rows.sort(key=lambda row: (row[0], row[1], row[2].name))
+        return rows
+
+    def system_prices(self, system):
+        """good -> [(price, MarketState)] for every market in one system."""
+        rows = defaultdict(list)
+        for ms in self.markets_in.get(system, ()):
+            for good, price in ms.market.items():
+                rows[good].append((price, ms))
+        for quotes in rows.values():
+            quotes.sort(key=lambda quote: quote[0])
+        return dict(rows)
+
+    def regional_prices(self, start, depth=None):
+        """good -> average price across every market within scan range."""
+        prices = defaultdict(list)
+        for _, _, ms in self.nearby_markets(start, depth):
+            for good, price in ms.market.items():
+                prices[good].append(price)
+        return {good: sum(v) / len(v) for good, v in prices.items() if v}
+
+    def nearby_trades(self, start, depth=None):
+        """One best buy-low / sell-high trade per good, ranked by profit/jump.
+
+        Only markets inside the scan range are considered. The result is
+        what the Galactic Exchange shows, so remote prices stay hidden.
+        """
+        depth = scan_depth() if depth is None else depth
+        markets = self.nearby_markets(start, depth)
+        if not markets:
+            return []
+
+        systems = sorted({sname for _, sname, _ in markets})
+        reach = max(depth * 2 + 1, PLAN_DEPTH)
+        distances = {sname: self._bfs(sname, reach)[0] for sname in systems}
+
+        best = {}
+        for good in COMMODITIES:
+            # Buying cheapest and selling dearest is always the best pair,
+            # so each system only needs its two extreme markets.
+            per_system = {}
+            for jumps, sname, ms in markets:
+                price = ms.market.get(good)
+                if price is None:
+                    continue
+                rec = per_system.get(sname)
+                if rec is None:
+                    per_system[sname] = [price, price, ms, ms, jumps]
+                else:
+                    if price < rec[0]:
+                        rec[0], rec[2] = price, ms
+                    if price > rec[1]:
+                        rec[1], rec[3] = price, ms
+
+            for bsys, (bp, _, bms, _, bj) in per_system.items():
+                for ssys, (_, sp, _, sms, sj) in per_system.items():
+                    if bsys == ssys:
+                        continue
+                    hops = distances[bsys].get(ssys)
+                    if hops is None:
+                        continue
+                    profit = sp - bp
+                    if profit <= 0:
+                        continue
+                    score = profit / (hops + 1)
+                    old = best.get(good)
+                    old_score = old.profit / (old.hops + 1) if old else -1
+                    if score > old_score or (score == old_score and
+                                             (old is None or profit > old.profit)):
+                        best[good] = Trade(
+                            good, bp, bms, bsys, bj,
+                            sp, sms, ssys, sj, hops, profit,
+                        )
+
+        return sorted(best.values(),
+                      key=lambda t: (t.profit / (t.hops + 1), t.profit),
+                      reverse=True)
 
     def _pirate_edges(self):
         return {frozenset(e["edge"]) for e in self.effects if e["kind"] == "pirates"}
@@ -359,9 +478,13 @@ class Economy:
                    if (t.system == a and t.path and t.path[0] == b)
                    or (t.system == b and t.path and t.path[0] == a))
 
-    def add_news(self, text, kind):
-        self.news.append((self.day, text, kind))
+    def add_news(self, text, kind, trade=True):
+        entry = (self.day, text, kind)
+        self.news.append(entry)
         self.news = self.news[-60:]
+        if trade:
+            self.trade_news.append(entry)
+            self.trade_news = self.trade_news[-40:]
         if self.calibrated:
             state.add_message(f"NEWS: {text}")
 
@@ -506,13 +629,14 @@ class Economy:
         if kind == "scandal":
             corp = rng.choice(self.corporations)
             corp.mood -= 0.08
-            self.add_news(f"Audit finds irregularities at {corp.name}", "bad")
+            self.add_news(f"Audit finds irregularities at {corp.name}", "bad", trade=False)
             return
 
         if kind == "contract":
             comp = rng.choice(self.companies)
             comp.shock += 0.07
-            self.add_news(f"{comp.name} ({comp.ticker}) wins a major supply contract", "good")
+            self.add_news(f"{comp.name} ({comp.ticker}) wins a major supply contract",
+                          "good", trade=False)
 
     def _apply_effects(self):
         self.effects = [e for e in self.effects if e["end"] > self.day]
@@ -627,6 +751,23 @@ def init(stars, seed=None):
     return state.economy
 
 
-def tick():
-    if getattr(state, "economy", None) is not None:
-        state.economy.tick()
+PRICE_UPDATE_DAYS = 5   # markets re-price every this many days, so a trade stays readable
+
+
+def days_to_update():
+    """Days until the markets next change their prices."""
+    return PRICE_UPDATE_DAYS - state.day % PRICE_UPDATE_DAYS
+
+
+def tick(days=1):
+    """Run `days` days of economy in one go. The arrows next to prices compare
+    with the prices from before the whole batch."""
+    ec = getattr(state, "economy", None)
+    if ec is None:
+        return
+    before = [(ms, dict(ms.market)) for ms in ec.markets]
+    for _ in range(days):
+        ec.tick()
+    if days > 1:
+        for ms, prev in before:
+            ms.prev = prev

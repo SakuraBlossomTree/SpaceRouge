@@ -130,6 +130,35 @@ def zoom(step, anchor=None):
     set_zoom(state.galaxy_zoom - step, anchor)
 
 
+def jump_links(stars, depth):
+    """Gate links within `depth` hops of your system, for the galaxy chart.
+
+    Returns ([(a, b, level)], reached): level 1 links leave your own system,
+    level 2 links leave its neighbours, and so on; `reached` is the set of
+    systems those links lead to (your own system is not in it)."""
+    here = state.current_system.name if state.current_system else None
+    by_name = {s.name: s for s in stars}
+    if here not in by_name:
+        return [], set()
+    seen, frontier, done, edges = {here}, [here], set(), []
+    for level in range(1, depth + 1):
+        nxt = []
+        for name in frontier:
+            for jp in by_name[name].system.jump_points:
+                d = jp.destination
+                if d not in by_name:
+                    continue
+                pair = tuple(sorted((name, d)))
+                if pair not in done:
+                    done.add(pair)
+                    edges.append((name, d, level))
+                if d not in seen:
+                    seen.add(d)
+                    nxt.append(d)
+        frontier = nxt
+    return edges, seen - {here}
+
+
 def star_at_cell(stars, sx, sy):
     """The star drawn at a screen cell (nearest to the cell centre if several)."""
     best, best_d = None, None
@@ -140,3 +169,91 @@ def star_at_cell(stars, sx, sy):
             if best_d is None or d < best_d:
                 best, best_d = star, d
     return best
+
+
+# ---------------------------------------------------------------------------
+# System survey / scanner data
+# ---------------------------------------------------------------------------
+
+def scanned_systems():
+    """Return the persistent set of system names whose local data is known."""
+    known = getattr(state, "galaxy_scanned_systems", None)
+    if known is None:
+        known = set()
+        state.galaxy_scanned_systems = known
+    elif not isinstance(known, set):
+        # Save files may deserialize this as a list. Normalize it once.
+        known = set(known)
+        state.galaxy_scanned_systems = known
+    return known
+
+
+def scanner_range():
+    """Scanner radius in galaxy world-coordinate units (0 means no module).
+
+    The ship upgrade code should set state.galaxy_scanner_range.
+    """
+    try:
+        return max(0.0, float(getattr(state, "galaxy_scanner_range", 0.0)))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _scanner_origin(stars):
+    """Find the player's star in the supplied galaxy star collection."""
+    name = getattr(getattr(state, "current_star", None), "name", None)
+    if name is None:
+        name = getattr(getattr(state, "current_system", None), "name", None)
+    if name is None:
+        return None
+    return next((star for star in stars if star.name == name), None)
+
+
+def scanner_distance(star, stars):
+    """Euclidean distance from the player to a star, in galaxy units."""
+    origin = _scanner_origin(stars)
+    if origin is None or star is None:
+        return None
+    dx = star.x - origin.x
+    dy = star.y - origin.y
+    return (dx * dx + dy * dy) ** 0.5
+
+
+def scanner_covers(star, stars):
+    """Whether the installed scanner currently reaches this system."""
+    radius = scanner_range()
+    distance = scanner_distance(star, stars)
+    return radius > 0 and distance is not None and distance <= radius
+
+
+def is_system_scanned(star_or_name):
+    """Current and previously scanned systems may show their local system map."""
+    name = getattr(star_or_name, "name", star_or_name)
+    current_name = getattr(getattr(state, "current_star", None), "name", None)
+    if current_name is None:
+        current_name = getattr(getattr(state, "current_system", None), "name", None)
+    return name == current_name or name in scanned_systems()
+
+
+def update_scanner(stars):
+    """Passively survey all systems inside the current scanner's radius.
+
+    Call this when rendering the galaxy map (or from the world-update loop).
+    Discovered data is retained after the player moves away.
+    """
+    radius = scanner_range()
+    if radius <= 0:
+        return scanned_systems()
+
+    origin = _scanner_origin(stars)
+    if origin is None:
+        return scanned_systems()
+
+    known = scanned_systems()
+    radius_sq = radius * radius
+    for star in stars:
+        dx = star.x - origin.x
+        dy = star.y - origin.y
+        if dx * dx + dy * dy <= radius_sq:
+            known.add(star.name)
+    return known

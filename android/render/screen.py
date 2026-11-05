@@ -14,13 +14,16 @@ from core import state
 from render import ui, hud
 from render import title, story, galaxy, system as system_render, jumppoint
 from render import hyperspace, location, market, inventory, messages
-from render import missions, mission_log, gameover, planet, tutorial_panel
-from render import help as handbook, exchange
+from render import missions, mission_log, gameover, victory, planet, tutorial_panel
+from render import shipyard as shipyard_render
+from render import help as handbook, exchange, radio
+from render import notebook as notebook_render
+from render import pricelog as pricelog_render
 from render import combat as combat_render
 
-MODALS = ("JUMPPOINT", "LOCATION", "MARKET", "MISSIONS")
-OVERLAYS = ("INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE")
-FULLSCREEN = ("TITLE", "STORY", "GAME_OVER")
+MODALS = ("JUMPPOINT", "LOCATION", "MARKET", "MISSIONS", "SHIPYARD")
+OVERLAYS = ("INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE", "RADIO", "NOTEBOOK", "PRICELOG")
+FULLSCREEN = ("TITLE", "STORY", "GAME_OVER", "VICTORY")
 
 
 def _viewport_title(gs):
@@ -61,6 +64,7 @@ def _draw_view(con, gs, stars, depth=0):
             "LOCATION": lambda: location.draw(con, W, H),
             "MARKET": lambda: market.draw(con, W, H),
             "MISSIONS": lambda: missions.draw(con, W, H),
+            "SHIPYARD": lambda: shipyard_render.draw(con, W, H),
         }[gs]()
     elif gs in OVERLAYS:
         base = state.overlay_return or "SYSTEM"
@@ -73,10 +77,31 @@ def _draw_view(con, gs, stars, depth=0):
             "MISSION_LOG": lambda: mission_log.draw(con, W, H),
             "HELP": lambda: handbook.draw(con, W, H),
             "EXCHANGE": lambda: exchange.draw(con, W, H),
+            "RADIO": lambda: radio.draw(con, W, H),
+            "NOTEBOOK": lambda: notebook_render.draw(con, W, H),
+            "PRICELOG": lambda: pricelog_render.draw(con, W, H),
         }[gs]()
 
 
+def _quit_box(console):
+    """'Quit the game?' confirmation, centred on the whole window."""
+    w, h = 40, 7
+    x, y = (console.width - w) // 2, (console.height - h) // 2
+    console.draw_rect(x + 1, y + 1, w, h, ord(" "), bg=(0, 0, 0))
+    ui.frame(console, x, y, w, h, "Quit", fg=ui.BAD)
+    ui.center(console, x + w // 2, y + 2, "Quit the game?", fg=ui.TEXT)
+    ui.center(console, x + w // 2, y + 3, "Unsaved progress will be lost.", fg=ui.DIM)
+    ui.hint_row_centered(console, x + w // 2, y + 5, [("Y", "Quit"), ("N/ESC", "Keep playing")])
+
+
 def compose(console, map_con, stars, title_text, story_text):
+    _compose(console, map_con, stars, title_text, story_text)
+    if state.quit_confirm:
+        ui.dim_console(console, 0.4)
+        _quit_box(console)
+
+
+def _compose(console, map_con, stars, title_text, story_text):
     gs = state.game_state
     console.clear(bg=ui.BG)
 
@@ -89,10 +114,16 @@ def compose(console, map_con, stars, title_text, story_text):
     if gs == "GAME_OVER":
         gameover.draw(console, ui.SCREEN_W, ui.SCREEN_H)
         return
+    if gs == "VICTORY":
+        victory.draw(console, ui.SCREEN_W, ui.SCREEN_H)
+        return
 
     map_con.clear(bg=ui.BG)
     _draw_view(map_con, gs, stars)
     tutorial_panel.draw(map_con)
+    if state.quick_menu:
+        from render import quickmenu as quick_render
+        quick_render.draw(map_con)
 
     t, rt = _viewport_title(gs)
     ui.frame(console, 0, 0, ui.MAP_W + 2, ui.MAP_H + 2, t, right_title=rt,

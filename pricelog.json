@@ -3114,5 +3114,63 @@
         "day": 16
       }
     }
+  },
+  "1013703749": {
+    "Food": {
+      "Nova Outpost": {
+        "price": 14,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Water": {
+      "Nova Outpost": {
+        "price": 7,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Ore": {
+      "Nova Outpost": {
+        "price": 16,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Rare Minerals": {
+      "Nova Outpost": {
+        "price": 57,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Machinery": {
+      "Nova Outpost": {
+        "price": 31,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Medicine": {
+      "Nova Outpost": {
+        "price": 12,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Electronics": {
+      "Nova Outpost": {
+        "price": 24,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    },
+    "Luxury Goods": {
+      "Nova Outpost": {
+        "price": 52,
+        "system": "Sigma Secundus",
+        "day": 12
+      }
+    }
   }
 }

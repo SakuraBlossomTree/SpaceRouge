@@ -125,6 +125,15 @@ def draw(console, width, height, system):
     else:
         console.print(px, py, "@", fg=ui.PLAYER)
 
+    # --- autopilot target -----------------------------------------------------
+    if state.autopilot is not None:
+        tx, ty, _ = state.autopilot
+        if 0 <= tx < width and 0 <= ty < height and (tx, ty) != (px, py):
+            ch = int(console.rgb["ch"][ty, tx])
+            blink = int(t * 4) % 2 == 0
+            console.print(tx, ty, chr(ch) if ch not in (0, 32) else "◦",
+                          fg=(0, 0, 0) if blink else ui.KEY, bg=ui.KEY if blink else None)
+
     # --- look cursor ---------------------------------------------------------
     state.look_object = look_object
     if state.look_mode:
