@@ -92,7 +92,13 @@ pip install -r requirements.txt
 Run the game:
 
 ```bash
-python main.py
+python src/main.py
+```
+
+Run the tests:
+
+```bash
+python -m unittest discover -s tests -v
 ```
 
 ## Controls
@@ -116,8 +122,7 @@ Controls are subject to change as development continues.
 | TAB                 | Hop the scan cursor to the next star     |
 | N                   | Toggle the galaxy minimap                |
 | I / L / P           | Cargo hold / comms log / contract log    |
-| E                   | Galactic Exchange (markets, goods, routes) |
-| U (Exchange)        | Debug: install/remove the market scanner |
+| E                   | Galactic Exchange (market intelligence)  |
 | R (galaxy)          | Trade-route heat on the galaxy chart     |
 | H                   | Pilot's Handbook (in-game help)          |
 | T                   | Show / hide the tutorial                 |
@@ -142,21 +147,38 @@ goods leave their home systems. Share prices follow revenue, plus market
 mood, corporate mood and **news events** (pirates on a busy route, mining
 strikes, harvests, shortages, scandals, contracts).
 
-Press **E** for the Galactic Exchange. The long-range market scan is a ship
-upgrade, so a new pilot starts with local prices only: dock at a market and
-the Exchange shows its goods. Once a scanner is fitted it covers markets
-within one jump of your current system: the overview compares local prices
-with the regional average (**▼** at least 15% cheap, **▲** at least 15% dear)
-and lists the best nearby trades and market news. Further tabs list nearby
-systems, every good with its best buy/sell market, and the busiest trade
-lanes. Fly on and the scan moves with you, revealing new prices. Press **R**
-on the galaxy chart to see routes glow.
+Press **E** for the Galactic Exchange. It is an information service only:
+buying and selling still happen at station Trading Posts.
 
-Until the scanner becomes a purchasable upgrade, **U** on the Exchange is a
-debug key that installs or removes it (its on-screen hint only appears when
-`DEBUG` is on). The economy advances one day whenever a game day passes; in
-`DEBUG` mode, **F** on the Exchange runs it forward a day. Tuning constants
-are at the top of `economy.py`.
+The galaxy economy keeps running whether you are watching or not, but the
+Exchange only shows what your **Long-Range System Scanner** has recorded.
+A standard scanner is fitted free and covers your current system plus one
+jump. Distances are measured through the actual jump-gate network, never as
+straight-line distance on the chart. Shipyard upgrades extend the scanner to
+2, 3 and 4 jumps for 1,800 / 4,500 / 10,000 credits.
+
+Every system has one of three states:
+
+* **LIVE** - inside scanner range; prices are read from the current market.
+* **STALE** - outside range but previously recorded; only the last-known
+  snapshot and its recording day are shown.
+* **UNKNOWN** - never recorded; no prices are shown.
+
+The tabs are **Overview**, **Commodities**, **Systems**, **Opportunities**
+and **Routes**. They show the current system's market, cheapest and dearest
+known quotes, a system directory, possible buy-low / sell-high pairs, and
+trade-lane traffic. The current system always has a full preview. Systems
+inside scanner range show a fully labelled map; systems one jump beyond that
+range are still visible, but without planet, station or jump-gate labels.
+Anything farther away uses the existing `NO DATA AVAILABLE` presentation.
+Scanner upgrades also extend the galaxy chart's system previews, but they
+never grant hyperspace access: jumping still needs a real jump gate and fuel.
+Press **R** on the galaxy chart to see routes glow.
+
+The economy advances one day whenever a game day passes; in `DEBUG` mode,
+**F** on the Exchange runs it forward a day. Tuning constants are at the top
+of `economy.py`, and the scanner's levels, radii and observed-preview margin
+are centralised in `src/core/scanner.py`.
 
 ## Seeds
 
@@ -165,7 +187,11 @@ jump gates, the economy's companies and fleets, and the contracts each
 station posts. The same seed always rebuilds the same galaxy.
 
 * The current seed is shown on the title screen and saved to `save.json`.
-* Title screen: **S** to type a seed, **L** to replay last run's galaxy.
+* `save.json` also stores the Long-Range System Scanner level, the recorded
+  market intelligence and the systems you have surveyed. Older seed-only
+  save files still load and simply start with no recorded intelligence.
+* Title screen: **S** to type a seed, **L** to replay last run's galaxy and
+  restore its scanner and intelligence.
 * Or start straight into one: `python src/main.py --seed 12345`
 
 ## Audio

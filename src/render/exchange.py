@@ -1,26 +1,26 @@
-"""Render the EXCHANGE overlay: nearby market prices and trade information.
+"""Render the EXCHANGE overlay: the player's market intelligence network.
 
-The Exchange deliberately has no company, stock or galaxy-wide price data.
-A long-range market scanner is required to compare systems; it is a ship
-upgrade, not fitted at the start. Without it only the market you are docked
-at is visible. With it, markets within core.economy.scan_depth() jumps are
-shown, with each good marked cheap or dear against the regional average.
-Flying somewhere new is how you discover new prices.
+This is an information screen only.  Buying and selling happen at station
+markets; the Exchange shows what the Long-Range System Scanner has recorded.
 
-Tabs: Overview, Markets, Goods, Routes. The last three need the scanner.
+The economy always has real prices for every market.  The Exchange never
+reads them for a system outside the scanner radius: LIVE systems are read
+from the economy, STALE systems are read from the player's saved records,
+and UNKNOWN systems show no prices at all.
 
-TODO: the U key on the Exchange is a temporary debug toggle for the
-scanner; replace it with a real purchase/installation path.
+Tabs: Overview, Commodities, Systems, Opportunities, Routes.
 """
 
-from core import state
-from core.economy import PRICE_BAND, scan_depth, price_band
+from core import market_intel as intel
+from core import scanner, shipyard, state
+from core.economy import PRICE_BAND
 from core.world import COMMODITIES
 from render import ui
 
 W, H = 78, 58
-TABS = ["Overview", "Markets", "Goods", "Routes"]
+TABS = ["Overview", "Commodities", "Systems", "Opportunities", "Routes"]
 NEWS_FG = {"good": ui.GOOD, "bad": ui.BAD, "info": ui.ACCENT}
+STATUS_FG = {intel.LIVE: ui.GOOD, intel.STALE: ui.WARN, intel.UNKNOWN: ui.FAINT}
 
 
 # ---------------------------------------------------------------------------
@@ -42,95 +42,80 @@ def _docked_location():
     return state.current_location
 
 
-def _docked_market(ec):
-    """The market the player is docked at, or None while flying."""
-    location = _docked_location()
-    if location is None:
-        return None
-    return ec.market_for(location)
-
-
 def _selected(index, count):
     if count <= 0:
         return 0
     return max(0, min(index, count - 1))
 
 
-def _price_text(lo, hi):
-    return f"{lo} cr" if lo == hi else f"{lo}-{hi} cr"
+def _offset(index, count, height):
+    """First visible row for a scrolling list."""
+    if count <= height:
+        return 0
+    return max(0, min(index - height // 2, count - height))
 
 
 def _jumps(n):
     return "0j" if not n else f"{n}j"
 
 
-def _price_tag(lo, hi, reference):
-    """Price-range label and colour against a regional average."""
-    if not reference:
-        return "-", ui.DIM
-    cheap = lo <= reference * (1 - PRICE_BAND)
-    dear = hi >= reference * (1 + PRICE_BAND)
-    if cheap and dear:
-        return "▼▲ mixed", ui.ACCENT
-    if cheap:
-        return f"▼ {(reference - lo) / reference * 100:.0f}% cheap", ui.GOOD
-    if dear:
-        return f"▲ {(hi - reference) / reference * 100:.0f}% dear", ui.WARN
-    return "fair", ui.DIM
+def _day(day):
+    return f"day {day}" if day is not None else "never"
 
 
-def _best_quotes(markets, good):
-    quotes = [(ms.market[good], ms, sname, jumps)
-              for jumps, sname, ms in markets if good in ms.market]
-    quotes.sort(key=lambda quote: (quote[0], quote[2], quote[1].name))
-    return quotes
+def _status_text(status, day=None, short=False):
+    if status == intel.UNKNOWN:
+        return "UNKNOWN"
+    if day is None:
+        return status
+    return f"{status} d{day}" if short else f"{status} · day {day}"
 
 
-def tab_count(tab):
-    """Rows the UP/DOWN cursor can move through on the current tab."""
-    ec = state.economy
-    if ec is None or not state.market_scanner:
-        return 0
-    if tab == 1:
-        return len(ec.systems_within(_start_system()))
-    if tab == 2:
-        return len(COMMODITIES)
-    return 0
+def _quote_status(quote, key="buy"):
+    price = quote[key] if quote else None
+    return f"{price} cr" if price is not None else "-"
+
+
+def _market_label(market):
+    return market["name"]
+
+
+def _system_prices(markets):
+    """good -> {'buy_lo', 'buy_hi', 'sell_hi'} across one system's markets."""
+    rows = {}
+    for good in COMMODITIES:
+        buys = [m["buy"][good] for m in markets if good in m["buy"]]
+        sells = [m["sell"][good] for m in markets if good in m["sell"]]
+        if not buys:
+            continue
+        rows[good] = {
+            "buy_lo": min(buys),
+            "buy_hi": max(buys),
+            "sell_hi": max(sells) if sells else None,
+        }
+    return rows
+
+
+def _price_range(lo, hi):
+    return f"{lo}" if lo == hi else f"{lo}-{hi}"
 
 
 def _scan_range():
-    n = scan_depth()
-    return f"{n} jump{'s' if n != 1 else ''}"
+    return scanner.range_text()
 
 
-def _scanner_locked(console, ix, iw, y, bottom, heading, detail):
-    """Explain what the missing long-range scanner would unlock."""
-    lines = ui.wrap(detail, iw)
-    height = 7 + len(lines)
-    top = y + max(0, (bottom - y - height) // 2)
-    ui.text(console, ix, top, "LONG-RANGE MARKET SCANNER REQUIRED", fg=ui.WARN)
-    ui.text(console, ix, top + 2, heading, fg=ui.TITLE)
-    for i, line in enumerate(lines):
-        ui.text(console, ix, top + 4 + i, line, fg=ui.TEXT)
-    note_y = top + 4 + len(lines) + 1
-    ui.text(console, ix, note_y,
-            "The Exchange currently shows local prices only.", fg=ui.DIM)
-    ui.text(console, ix, note_y + 1,
-            "Buy a Market Scanner at a shipyard (2) when docked.", fg=ui.ACCENT)
+def _tag_bg(status):
+    return None
 
 
 # ---------------------------------------------------------------------------
-# Tabs
+# Overview
 # ---------------------------------------------------------------------------
 
 def _overview(console, ec, x, y, ix, iw, bottom):
     start = _start_system()
-    upgraded = state.market_scanner
-    nearby = ec.systems_within(start) if start else {}
-    market_count = sum(len(ec.markets_in.get(name, ())) for name in nearby)
-    system_markets = len(ec.markets_in.get(start, ())) if start else 0
-    docked = _docked_market(ec)
-    docked_loc = _docked_location()
+    summary = intel.overview()
+    docked = _docked_location()
 
     ui.text(console, ix, y, "SYSTEM", fg=ui.DIM)
     ui.text(console, ix + 8, y, start or "unknown", fg=ui.TITLE)
@@ -139,383 +124,414 @@ def _overview(console, ec, x, y, ix, iw, bottom):
         if archetype:
             ui.text(console, ix + 10 + len(start), y, f"· {archetype}", fg=ui.DIM)
     ui.right(console, ix + iw - 1, y,
-             f"SCAN RANGE {_scan_range().upper()}" if upgraded else "LOCAL FEED",
-             fg=ui.ACCENT if upgraded else ui.WARN)
+             f"SCANNER {_scan_range().upper()} · {scanner.level_name().upper()}",
+             fg=ui.ACCENT)
 
     if docked:
-        where = f"Docked at {docked_loc.name if docked_loc else docked.name}"
-    elif docked_loc:
-        where = f"Docked at {docked_loc.name} · no market here"
-    elif start and upgraded:
-        where = ("In space · system-wide prices" if system_markets
-                 else "In space · no local market")
+        where = f"Docked at {docked.name}"
     elif start:
-        where = "In space · dock at a market to see prices"
+        where = "Remote market intelligence · scanner centred on this system"
     else:
-        where = "In space"
+        where = "Enter a system to receive scanner data"
     ui.text(console, ix, y + 1, where, fg=ui.DIM)
-    if upgraded:
-        ui.right(console, ix + iw - 1, y + 1,
-                 f"{len(nearby)} systems · {market_count} markets", fg=ui.FAINT)
 
-    # --- local prices ------------------------------------------------------
-    ty = y + 3
-    ui.text(console, ix, ty,
-            "LOCAL PRICES" if (docked or not upgraded) else "PRICES IN THIS SYSTEM",
-            fg=ui.TITLE)
-    if upgraded:
-        ui.right(console, ix + 43, ty, "AVG", fg=ui.DIM)
-        ui.text(console, ix + iw - 24, ty, "VS REGION", fg=ui.DIM)
+    # --- network summary ---------------------------------------------------
+    ui.hline(console, x, y + 3, W, fg=ui.BORDER_HI)
+    ui.text(console, ix, y + 4, "MARKET INTELLIGENCE NETWORK", fg=ui.TITLE)
+    left_x, right_x = ix, ix + 37
+    col_w = 32
+    ui.kv(console, left_x, y + 5, col_w, "Systems detected",
+          f"{summary['detected']} within {_scan_range()}", value_fg=ui.KEY)
+    ui.kv(console, left_x, y + 6, col_w, "Recorded systems",
+          str(summary["known_systems"]))
+    ui.kv(console, left_x, y + 7, col_w, "Market records",
+          str(summary["market_records"]))
+    ui.kv(console, left_x, y + 8, col_w, "Commodities tracked",
+          f"{summary['commodities']} / {len(COMMODITIES)}")
+    ui.kv(console, right_x, y + 5, col_w, "LIVE now",
+          str(summary["live_systems"]), value_fg=ui.GOOD)
+    ui.kv(console, right_x, y + 6, col_w, "STALE records",
+          str(summary["stale_systems"]), value_fg=ui.WARN)
+    ui.kv(console, right_x, y + 7, col_w, "UNKNOWN",
+          str(summary["unknown_systems"]), value_fg=ui.FAINT)
+    ui.kv(console, right_x, y + 8, col_w, "Last sweep",
+          _day(summary["last_sweep"]), value_fg=ui.DIM)
+
+    # --- current system market --------------------------------------------
+    ui.hline(console, x, y + 10, W, fg=ui.BORDER_HI)
+    current_status = intel.status(start) if start else intel.UNKNOWN
+    ui.text(console, ix, y + 11, "CURRENT SYSTEM MARKET", fg=ui.TITLE)
+    ui.right(console, ix + iw - 1, y + 11,
+             _status_text(current_status,
+                          intel.last_update(start) if start else None),
+             fg=STATUS_FG[current_status])
+
+    ui.text(console, ix, y + 12, "COMMODITY", fg=ui.DIM)
+    ui.right(console, ix + 36, y + 12, "BUY", fg=ui.DIM)
+    ui.right(console, ix + 46, y + 12, "SELL", fg=ui.DIM)
+    ui.right(console, ix + iw - 1, y + 12, "MARKETS", fg=ui.DIM)
+
+    markets = intel.system_markets(start) if start else []
+    prices = _system_prices(markets)
+    row_y = y + 13
+    if not prices:
+        note = "No markets in this system." if start else "No current system."
+        ui.text(console, ix, row_y, note, fg=ui.DIM)
+        row_y += 2
     else:
-        ui.right(console, ix + 22, ty, "PRICE", fg=ui.DIM)
+        for good in COMMODITIES:
+            if good not in prices:
+                continue
+            row = prices[good]
+            count = sum(1 for m in markets if good in m["buy"])
+            ui.text(console, ix, row_y, good, fg=ui.TEXT)
+            ui.right(console, ix + 36, row_y,
+                     _price_range(row["buy_lo"], row["buy_hi"]), fg=ui.KEY)
+            ui.right(console, ix + 46, row_y,
+                     str(row["sell_hi"]) if row["sell_hi"] is not None else "-",
+                     fg=ui.GOOD)
+            ui.right(console, ix + iw - 1, row_y, str(count), fg=ui.FAINT)
+            row_y += 1
 
-    region = ec.regional_prices(start) if start and upgraded else {}
-    if docked:
-        local = {good: [(price, docked)] for good, price in docked.market.items()}
-    elif upgraded and start:
-        local = ec.system_prices(start)
-    else:
-        local = {}
-
-    if not local:
-        if docked_loc:
-            note = f"{docked_loc.name} has no market."
-        elif start and upgraded:
-            note = "No markets in this system."
-        elif start:
-            note = "Dock at a market to see its prices."
-        else:
-            note = "Enter a system to see market prices."
-        ui.text(console, ix, ty + 2, note, fg=ui.DIM)
-    ry = ty + 2
-    for good in COMMODITIES:
-        quotes = local.get(good)
-        if not quotes:
-            continue
-        prices = [price for price, _ in quotes]
-        lo, hi = min(prices), max(prices)
-        ui.text(console, ix, ry, good, fg=ui.TEXT)
-        ui.right(console, ix + 22, ry, _price_text(lo, hi), fg=ui.KEY)
-        if upgraded:
-            reference = region.get(good)
-            tag, tag_fg = _price_tag(lo, hi, reference)
-            ui.right(console, ix + 43, ry,
-                     f"{reference:.1f}" if reference else "-", fg=ui.DIM)
-            ui.text(console, ix + iw - 24, ry, tag, fg=tag_fg)
-        ry += 1
-
-    # --- best nearby trades / scanner upgrade -------------------------------
-    dy = ty + 12
-    ui.hline(console, x, dy - 1, W, fg=ui.BORDER_HI)
-    if upgraded:
-        ui.text(console, ix, dy, "BEST NEARBY TRADES", fg=ui.TITLE)
-        ui.right(console, ix + iw - 1, dy, f"within {_scan_range()}", fg=ui.FAINT)
-        ui.text(console, ix, dy + 1, "GOOD", fg=ui.DIM)
-        ui.text(console, ix + 14, dy + 1, "BUY", fg=ui.DIM)
-        ui.text(console, ix + 35, dy + 1, "SELL", fg=ui.DIM)
-        ui.right(console, ix + iw - 1, dy + 1, "GAIN", fg=ui.DIM)
-
-        deals = ec.nearby_trades(start)[:6] if start else []
-        if not deals:
-            ui.text(console, ix, dy + 3, "No profitable trades in scan range.",
+    # --- scanner upgrade ---------------------------------------------------
+    sy = max(row_y + 1, y + 24)
+    if sy <= bottom - 7:
+        ui.hline(console, x, sy, W, fg=ui.BORDER_HI)
+        ui.text(console, ix, sy + 1, "LONG-RANGE SYSTEM SCANNER", fg=ui.TITLE)
+        ui.right(console, ix + iw - 1, sy + 1,
+                 f"{scanner.level_name()} · {_scan_range()}", fg=ui.ACCENT)
+        offer = shipyard.next_offer("scanrange")
+        if offer is None:
+            ui.text(console, ix, sy + 2,
+                    "Fully upgraded: the Exchange can follow markets four jumps out.",
                     fg=ui.DIM)
-            ny = dy + 5
         else:
-            for i, deal in enumerate(deals):
-                line_y = dy + 2 + i
-                buy = f"{deal.buy_price} cr {ui.clip(deal.buy_system, 8)} ({_jumps(deal.buy_jumps)})"
-                sell = f"{deal.sell_price} cr {ui.clip(deal.sell_system, 8)} ({_jumps(deal.sell_jumps)})"
-                gain = f"+{deal.profit} cr {deal.profit / (deal.hops + 1):.1f}/j"
-                ui.text(console, ix, line_y, deal.good, fg=ui.TEXT)
-                ui.text(console, ix + 14, line_y, buy, fg=ui.GOOD)
-                ui.text(console, ix + 35, line_y, sell, fg=ui.WARN)
-                ui.right(console, ix + iw - 1, line_y, gain, fg=ui.KEY)
-            ny = dy + 2 + len(deals) + 2
-    else:
-        ui.text(console, ix, dy, "LONG-RANGE MARKET SCANNER", fg=ui.TITLE)
-        ui.right(console, ix + iw - 1, dy, "NOT INSTALLED", fg=ui.WARN)
-        detail = (f"Compare every market within {_scan_range()}, see which goods are "
-                  "cheap or dear, and find the best nearby trade.")
-        lines = ui.wrap(detail, iw)
-        for i, line in enumerate(lines):
-            ui.text(console, ix, dy + 2 + i, line, fg=ui.TEXT)
-        ui.text(console, ix, dy + 2 + len(lines) + 1,
-                "Dock at a market to see its local prices.", fg=ui.DIM)
-        ui.text(console, ix, dy + 2 + len(lines) + 2,
-                "Buy a Market Scanner at a shipyard (2) when docked.", fg=ui.ACCENT)
-        ny = dy + 2 + len(lines) + 5
-
-    # --- explanation (anchored to the bottom of the panel) -----------------
-    hy = max(ny + 6, bottom - 5)
+            price, desc = offer
+            ui.text(console, ix, sy + 2,
+                    ui.clip(f"Next: {desc} · {ui.fmt_int(price)} cr at a shipyard.", iw),
+                    fg=ui.TEXT)
+        ui.text(console, ix, sy + 3,
+                "Upgrades extend previews on the galaxy chart too; they never grant jump access.",
+                fg=ui.FAINT)
 
     # --- market wire -------------------------------------------------------
-    ui.hline(console, x, ny - 1, W, fg=ui.BORDER_HI)
-    ui.text(console, ix, ny, "MARKET WIRE", fg=ui.TITLE)
-    news = list(reversed(ec.trade_news[-5:]))
-    if not news:
-        ui.text(console, ix, ny + 2, "No market news.", fg=ui.DIM)
-    wire_y = ny + 1
-    body_w = iw - 7
-    for day, text, kind in news:
-        if wire_y >= hy - 1:
-            break
-        age = max(0, state.day - day)
-        ui.right(console, ix + 5, wire_y, f"{age}d" if age else "now",
-                 fg=ui.FAINT)
-        parts = ui.wrap(text, body_w)
-        if len(parts) > 2:                       # keep the wire compact
-            parts = parts[:2]
-            parts[1] = ui.clip(parts[1] + " ...", body_w)
-        for part in parts:
-            if wire_y >= hy - 1:
+    wire_y = max(sy + 5, bottom - 11)
+    if wire_y < bottom - 4:
+        ui.hline(console, x, wire_y, W, fg=ui.BORDER_HI)
+        ui.text(console, ix, wire_y + 1, "MARKET WIRE", fg=ui.TITLE)
+        news = list(reversed(ec.trade_news[-3:]))
+        wy = wire_y + 2
+        if not news:
+            ui.text(console, ix, wy, "No market news.", fg=ui.DIM)
+        for day, text, kind in news:
+            if wy >= bottom - 5:
                 break
-            ui.text(console, ix + 7, wire_y, part,
+            age = max(0, state.day - day)
+            ui.right(console, ix + 5, wy, f"{age}d" if age else "now", fg=ui.FAINT)
+            ui.text(console, ix + 7, wy, ui.clip(text, iw - 7),
                     fg=NEWS_FG.get(kind, ui.TEXT))
-            wire_y += 1
-        wire_y += 1                              # blank line between items
+            wy += 1
 
-    # --- explanation -------------------------------------------------------
-    ui.hline(console, x, hy - 1, W, fg=ui.BORDER_HI)
-    ui.text(console, ix, hy, "HOW TO READ THIS", fg=ui.TITLE)
-    if upgraded:
-        ui.text(console, ix, hy + 1,
-                ui.clip(f"▼ cheap = at least {PRICE_BAND * 100:.0f}% below the "
-                        f"{scan_depth()}-jump regional average.", iw), fg=ui.DIM)
-        ui.text(console, ix, hy + 2,
-                ui.clip(f"▲ dear = at least {PRICE_BAND * 100:.0f}% above it. "
-                        "Buy low here, sell high there.", iw), fg=ui.DIM)
-        ui.text(console, ix, bottom - 1,
-                ui.clip(f"Only markets within {_scan_range()} are shown. Fly on "
-                        "to reveal new prices.", iw), fg=ui.FAINT)
-    else:
-        ui.text(console, ix, hy + 1,
-                ui.clip("Local prices are from the market you are docked at.",
-                        iw), fg=ui.DIM)
-        ui.text(console, ix, hy + 2,
-                ui.clip("A long-range scanner compares prices across nearby "
-                        "systems.", iw), fg=ui.DIM)
-        ui.text(console, ix, bottom - 1,
-                ui.clip("No scanner fitted. Only this system's market is "
-                        "visible.", iw), fg=ui.FAINT)
+    # --- status key --------------------------------------------------------
+    ui.hline(console, x, bottom - 3, W, fg=ui.BORDER_HI)
+    ui.text(console, ix, bottom - 2,
+            ui.clip("LIVE = current scanner feed   ·   STALE = last known data   ·   "
+                    "UNKNOWN = no record", iw), fg=ui.DIM)
+    ui.text(console, ix, bottom - 1,
+            ui.clip("The economy keeps moving outside scanner range. Stale prices are "
+                    "never presented as current.", iw), fg=ui.FAINT)
 
 
-def _markets(console, ec, x, y, ix, iw, bottom):
-    if not state.market_scanner:
-        _scanner_locked(
-            console, ix, iw, y, bottom, "NEARBY MARKETS",
-            f"Scan every market within {_scan_range()}, compare their prices at a "
-            "glance, and see which goods are cheap or dear in each system.")
-        return
+# ---------------------------------------------------------------------------
+# Commodities
+# ---------------------------------------------------------------------------
+
+def _commodities(console, ec, x, y, ix, iw, bottom):
     start = _start_system()
-    systems = sorted((ec.systems_within(start) if start else {}).items(),
-                     key=lambda item: (item[1], item[0]))
-    if not systems:
-        ui.text(console, ix, y, "No nearby market data. Enter a system first.",
-                fg=ui.DIM)
-        return
+    table = intel.commodity_table()
+    sel = _selected(state.exchange_index, len(table))
 
-    sel = _selected(state.exchange_index, len(systems))
-    region = ec.regional_prices(start)
+    ui.text(console, ix, y, "COMMODITY", fg=ui.DIM)
+    ui.text(console, ix + 13, y, "CHEAPEST BUY", fg=ui.DIM)
+    ui.text(console, ix + 39, y, "BEST SELL", fg=ui.DIM)
+    ui.right(console, ix + iw - 1, y, "SPREAD", fg=ui.DIM)
 
-    # --- system list -------------------------------------------------------
-    lw = 27
-    ui.text(console, ix, y, "NEARBY SYSTEMS", fg=ui.DIM)
-    ui.right(console, ix + lw - 7, y, "MKTS", fg=ui.DIM)
-    ui.right(console, ix + lw - 1, y, "JUMPS", fg=ui.DIM)
-    for i, (name, jumps) in enumerate(systems):
-        line_y = y + 2 + i
-        if line_y >= bottom:
-            break
-        on = i == sel
-        bg = ui.SEL_BG if on else None
-        if on:
-            console.draw_rect(ix - 1, line_y, lw + 1, 1, ord(" "), bg=bg)
-        fg = ui.PLAYER if jumps == 0 else (ui.SEL_FG if on else ui.TEXT)
-        ui.text(console, ix, line_y, "►" if on else " ", fg=ui.KEY, bg=bg)
-        ui.text(console, ix + 2, line_y, ui.clip(name, lw - 13), fg=fg, bg=bg)
-        ui.right(console, ix + lw - 7, line_y,
-                 f"{len(ec.markets_in.get(name, ()))}m", fg=ui.FAINT, bg=bg)
-        ui.right(console, ix + lw - 1, line_y, _jumps(jumps), fg=ui.DIM, bg=bg)
-
-    for line_y in range(y - 1, bottom):
-        console.print(ix + lw, line_y, "│", fg=ui.BORDER)
-
-    # --- selected system ---------------------------------------------------
-    dx = ix + lw + 2
-    dw = ix + iw - dx
-    sname, jumps = systems[sel]
-    markets = ec.markets_in.get(sname, ())
-    ui.text(console, dx, y, sname.upper(), fg=ui.TITLE)
-    ui.right(console, ix + iw - 1, y,
-             "HERE" if jumps == 0 else f"{jumps} JUMP" + ("S" if jumps != 1 else ""),
-             fg=ui.ACCENT if jumps == 0 else ui.DIM)
-    market_names = ", ".join(ms.name for ms in markets) or "no markets"
-    ui.text(console, dx, y + 1,
-            ui.clip(f"{len(markets)} market(s): {market_names}", dw), fg=ui.DIM)
-
-    ui.text(console, dx, y + 3, "GOOD", fg=ui.DIM)
-    ui.right(console, dx + 23, y + 3, "PRICE", fg=ui.DIM)
-    ui.text(console, dx + 27, y + 3, "VS REGION", fg=ui.DIM)
-
-    rows = ec.system_prices(sname)
-    row_y = y + 5
-    if not rows:
-        ui.text(console, dx, row_y, "No market in this system (military).", fg=ui.DIM)
-    for good in COMMODITIES:
-        quotes = rows.get(good)
-        if not quotes or row_y >= bottom:
-            continue
-        prices = [price for price, _ in quotes]
-        lo, hi = min(prices), max(prices)
-        tag, tag_fg = _price_tag(lo, hi, region.get(good))
-        ui.text(console, dx, row_y, good, fg=ui.TEXT)
-        ui.right(console, dx + 23, row_y, _price_text(lo, hi), fg=ui.KEY)
-        ui.text(console, dx + 27, row_y, tag, fg=tag_fg)
-        row_y += 1
-
-    # --- what each individual market is good for ---------------------------
-    sy = row_y + 1
-    if markets and sy < bottom - 5:
-        console.print(dx, sy - 1, "─" * dw, fg=ui.BORDER)
-        ui.text(console, dx, sy, "MARKET BREAKDOWN", fg=ui.TITLE)
-        by = sy + 2
-        for ms in markets[:5]:
-            if by + 2 >= bottom - 2:
-                break
-            cheap = [good for good in COMMODITIES
-                     if good in ms.market and price_band(ms.market[good],
-                                                         region.get(good)) < 0]
-            dear = [good for good in COMMODITIES
-                    if good in ms.market and price_band(ms.market[good],
-                                                        region.get(good)) > 0]
-            ui.text(console, dx, by, ui.clip(ms.name, dw), fg=ui.ACCENT)
-            ui.text(console, dx + 2, by + 1,
-                    ui.clip("▼ cheap  " + (", ".join(cheap[:3]) or "-"), dw - 2),
-                    fg=ui.GOOD if cheap else ui.FAINT)
-            ui.text(console, dx + 2, by + 2,
-                    ui.clip("▲ dear   " + (", ".join(dear[:3]) or "-"), dw - 2),
-                    fg=ui.WARN if dear else ui.FAINT)
-            by += 3
-        if len(markets) > 5:
-            ui.text(console, dx, by, f"+{len(markets) - 5} more market(s)",
-                    fg=ui.FAINT)
-
-    ui.text(console, dx, bottom - 1,
-            ui.clip("Ranges cover every market in this system.", dw), fg=ui.FAINT)
-
-
-def _goods(console, ec, x, y, ix, iw, bottom):
-    if not state.market_scanner:
-        _scanner_locked(
-            console, ix, iw, y, bottom, "GOODS COMPARISON",
-            "Compare every trade good across nearby markets: local ranges, "
-            "the regional average, and the best place to buy or sell.")
-        return
-    start = _start_system()
-    if not start:
-        ui.text(console, ix, y, "No market data. Enter a system first.", fg=ui.DIM)
-        return
-
-    sel = _selected(state.exchange_index, len(COMMODITIES))
-    region = ec.regional_prices(start)
-    local = ec.system_prices(start)
-    markets = ec.nearby_markets(start)
-
-    # --- all goods at a glance --------------------------------------------
-    ui.text(console, ix, y, "GOOD", fg=ui.DIM)
-    ui.right(console, ix + 21, y, "SYSTEM", fg=ui.DIM)
-    ui.right(console, ix + 28, y, "REGION", fg=ui.DIM)
-    ui.right(console, ix + 34, y, "GAP", fg=ui.DIM)
-    ui.text(console, ix + 36, y, "BEST BUY", fg=ui.DIM)
-    ui.text(console, ix + 55, y, "BEST SELL", fg=ui.DIM)
-
-    for i, good in enumerate(COMMODITIES):
+    for i, row in enumerate(table):
         line_y = y + 2 + i
         on = i == sel
         bg = ui.SEL_BG if on else None
         if on:
             console.draw_rect(ix - 1, line_y, iw + 2, 1, ord(" "), bg=bg)
 
-        quotes = local.get(good, [])
-        if quotes:
-            prices = [price for price, _ in quotes]
-            here = _price_text(min(prices), max(prices))
+        cheap = row["cheapest"]
+        sell = row["best_sell"]
+        if cheap:
+            cheap_text = f"[{'L' if cheap['status'] == intel.LIVE else 'S'}] {cheap['buy']} cr {cheap['system']}"
+            cheap_fg = STATUS_FG[cheap["status"]]
         else:
-            here = "-"
-
-        all_quotes = _best_quotes(markets, good)
-        if all_quotes:
-            buy = all_quotes[0]
-            buy_text = f"{buy[0]} cr {ui.clip(buy[2], 10)}"
+            cheap_text, cheap_fg = "-", ui.FAINT
+        if sell:
+            sell_text = f"[{'L' if sell['status'] == intel.LIVE else 'S'}] {sell['sell']} cr {sell['system']}"
+            sell_fg = STATUS_FG[sell["status"]]
         else:
-            buy_text = "-"
-        if len(all_quotes) > 1:
-            sell = all_quotes[-1]
-            sell_text = f"{sell[0]} cr {ui.clip(sell[2], 9)}"
-            spread = max(0, sell[0] - buy[0])
-        else:
-            sell_text = "-"
-            spread = 0
+            sell_text, sell_fg = "-", ui.FAINT
 
-        ui.text(console, ix, line_y, good, fg=ui.SEL_FG if on else ui.TEXT, bg=bg)
-        ui.right(console, ix + 21, line_y, here, fg=ui.KEY, bg=bg)
-        ui.right(console, ix + 28, line_y, f"{region.get(good, 0):.1f}",
-                 fg=ui.DIM, bg=bg)
-        ui.right(console, ix + 34, line_y, f"+{spread}" if spread else "-",
-                 fg=ui.GOOD if spread else ui.FAINT, bg=bg)
-        ui.text(console, ix + 36, line_y, ui.clip(buy_text, 18),
-                fg=ui.GOOD if all_quotes else ui.FAINT, bg=bg)
-        ui.text(console, ix + 55, line_y, ui.clip(sell_text, 17),
-                fg=ui.WARN if len(all_quotes) > 1 else ui.FAINT, bg=bg)
+        ui.text(console, ix, line_y, row["good"],
+                fg=ui.SEL_FG if on else ui.TEXT, bg=bg)
+        ui.text(console, ix + 13, line_y, ui.clip(cheap_text, 24),
+                fg=cheap_fg, bg=bg)
+        ui.text(console, ix + 39, line_y, ui.clip(sell_text, 24),
+                fg=sell_fg, bg=bg)
+        ui.right(console, ix + iw - 1, line_y,
+                 f"+{row['spread']}" if row["spread"] else "-",
+                 fg=ui.GOOD if row["spread"] else ui.FAINT, bg=bg)
 
-    # --- selected good: every nearby market -------------------------------
-    dy = y + 12
-    ui.hline(console, x, dy - 1, W, fg=ui.BORDER_HI)
-    good = COMMODITIES[sel]
-    average = region.get(good)
-    ui.text(console, ix, dy, f"{good.upper()} · NEARBY MARKETS", fg=ui.TITLE)
-    if average:
-        ui.right(console, ix + iw - 1, dy, f"REGION AVG {average:.1f} cr",
-                 fg=ui.DIM)
+    # --- selected commodity ------------------------------------------------
+    dy = y + 11
+    ui.hline(console, x, dy, W, fg=ui.BORDER_HI)
+    row = table[sel]
+    good = row["good"]
+    ui.text(console, ix, dy + 1, f"{good.upper()} · KNOWN MARKET QUOTES",
+            fg=ui.TITLE)
+    cheap = row["cheapest"]
+    dearest = row["dearest"]
+    sell = row["best_sell"]
+    quotes = intel.commodity_quotes(good)
+    average = intel.known_average(good)
+    parts = []
+    if cheap:
+        parts.append(f"cheapest {cheap['buy']} cr {cheap['system']}")
+    if dearest:
+        parts.append(f"dearest {dearest['buy']} cr {dearest['system']}")
+    if sell:
+        parts.append(f"best sell {sell['sell']} cr {sell['system']}")
+    if average is not None:
+        parts.append(f"avg {average:.0f} cr")
+    if parts:
+        ui.right(console, ix + iw - 1, dy + 1,
+                 ui.clip(" · ".join(parts), iw - 28), fg=ui.DIM)
 
-    ui.text(console, ix, dy + 2, "SYSTEM", fg=ui.DIM)
-    ui.text(console, ix + 20, dy + 2, "MARKET", fg=ui.DIM)
-    ui.right(console, ix + 52, dy + 2, "JUMPS", fg=ui.DIM)
-    ui.right(console, ix + 59, dy + 2, "PRICE", fg=ui.DIM)
-    ui.text(console, ix + 61, dy + 2, "VS REGION", fg=ui.DIM)
+    ui.text(console, ix, dy + 3, "SYSTEM", fg=ui.DIM)
+    ui.text(console, ix + 18, dy + 3, "MARKET", fg=ui.DIM)
+    ui.right(console, ix + 47, dy + 3, "BUY", fg=ui.DIM)
+    ui.right(console, ix + 55, dy + 3, "SELL", fg=ui.DIM)
+    ui.text(console, ix + 58, dy + 3, "STATUS", fg=ui.DIM)
+    ui.right(console, ix + iw - 1, dy + 3, "UPDATED", fg=ui.DIM)
 
-    quotes = _best_quotes(markets, good)
     if not quotes:
-        ui.text(console, ix, dy + 4, "No nearby market trades this good.", fg=ui.DIM)
+        ui.text(console, ix, dy + 5,
+                "No known market trades this commodity yet.", fg=ui.DIM)
+    shown = 0
+    for quote in quotes:
+        line_y = dy + 4 + shown
+        if line_y >= bottom - 2:
+            break
+        here = quote["system"] == start
+        fg = ui.PLAYER if here else ui.TEXT
+        ui.text(console, ix, line_y, ui.clip(quote["system"], 17), fg=fg)
+        ui.text(console, ix + 18, line_y, ui.clip(quote["market"], 27), fg=fg)
+        marker = ""
+        if quote["buy"] is not None and average is not None:
+            if quote["buy"] < average * (1 - PRICE_BAND):
+                marker = "▼ "
+            elif quote["buy"] > average * (1 + PRICE_BAND):
+                marker = "▲ "
+        ui.right(console, ix + 47, line_y,
+                 marker + _quote_status(quote, "buy"), fg=ui.KEY)
+        ui.right(console, ix + 55, line_y, _quote_status(quote, "sell"), fg=ui.GOOD)
+        ui.text(console, ix + 58, line_y, quote["status"],
+                fg=STATUS_FG[quote["status"]])
+        ui.right(console, ix + iw - 1, line_y,
+                 _day(quote["updated_day"]), fg=ui.FAINT)
+        shown += 1
+    if shown < len(quotes):
+        ui.text(console, ix, bottom - 2,
+                f"+{len(quotes) - shown} more known quote(s).", fg=ui.FAINT)
+
+    if row["spread"]:
+        buy = row["cheapest"]
+        sell = row["best_sell"]
+        ui.text(console, ix, bottom - 1,
+                ui.clip(f"Potential spread: buy {buy['market']} ({buy['system']}) at "
+                        f"{buy['buy']} cr, sell at {sell['market']} ({sell['system']}) "
+                        f"for {sell['sell']} cr. Verify cargo, fuel and route.", iw),
+                fg=ui.TEXT)
+    else:
+        ui.text(console, ix, bottom - 1,
+                "No positive spread between known markets. Scan more systems to compare.",
+                fg=ui.DIM)
+
+
+# ---------------------------------------------------------------------------
+# Systems
+# ---------------------------------------------------------------------------
+
+def _systems(console, ec, x, y, ix, iw, bottom):
+    rows = intel.directory()
+    if not rows:
+        ui.text(console, ix, y, "No systems found.", fg=ui.DIM)
+        return
+    sel = _selected(state.exchange_index, len(rows))
+    lw = 34
+    list_top = y + 2
+    list_height = max(1, bottom - list_top - 1)
+    offset = _offset(sel, len(rows), list_height)
+
+    ui.text(console, ix, y, "SYSTEM MARKET DIRECTORY", fg=ui.DIM)
+    ui.right(console, ix + lw - 8, y, "STATUS", fg=ui.DIM)
+    ui.right(console, ix + lw - 1, y, "UPD", fg=ui.DIM)
+
+    for pos in range(list_height):
+        i = offset + pos
+        if i >= len(rows):
+            break
+        row = rows[i]
+        line_y = list_top + pos
+        on = i == sel
+        bg = ui.SEL_BG if on else None
+        if on:
+            console.draw_rect(ix - 1, line_y, lw + 1, 1, ord(" "), bg=bg)
+        status = row["status"]
+        fg = ui.PLAYER if row["is_current"] else (ui.SEL_FG if on else ui.TEXT)
+        ui.text(console, ix, line_y, "►" if on else " ", fg=ui.KEY, bg=bg)
+        ui.text(console, ix + 2, line_y, ui.clip(row["system"], 17), fg=fg, bg=bg)
+        ui.text(console, ix + 21, line_y, status, fg=STATUS_FG[status], bg=bg)
+        ui.right(console, ix + lw - 1, line_y,
+                 _day(row["updated_day"]) if status != intel.UNKNOWN else "-",
+                 fg=ui.FAINT, bg=bg)
+
+    for line_y in range(y - 1, bottom):
+        console.print(ix + lw, line_y, "│", fg=ui.BORDER)
+
+    # --- selected system ---------------------------------------------------
+    row = rows[sel]
+    sname = row["system"]
+    status = row["status"]
+    dx = ix + lw + 2
+    dw = ix + iw - dx
+    days = row["updated_day"]
+    ui.text(console, dx, y, sname.upper(), fg=ui.TITLE)
+    ui.right(console, ix + iw - 1, y, _status_text(status, days),
+             fg=STATUS_FG[status])
+    hops = row["jumps"]
+    distance = "current system" if rows[sel]["is_current"] else (
+        f"{hops} jump{'s' if hops != 1 else ''} from you"
+        if hops is not None else "no known route")
+    ui.text(console, dx, y + 1, ui.clip(distance, dw), fg=ui.DIM)
+
+    if status == intel.LIVE:
+        detail = f"Scanner feed active · refreshed {_day(days)}"
+        detail_fg = ui.GOOD
+    elif status == intel.STALE:
+        detail = f"Last known data · recorded {_day(days)}"
+        detail_fg = ui.WARN
+    else:
+        detail = "No market information recorded for this system."
+        detail_fg = ui.FAINT
+    ui.text(console, dx, y + 3, ui.clip(detail, dw), fg=detail_fg)
+
+    markets = intel.system_markets(sname, status)
+    if status == intel.UNKNOWN:
+        ui.hline(console, x + lw + 1, y + 5, W - lw - 2, fg=ui.BORDER)
+        ui.center(console, dx + dw // 2, y + 8, "NO DATA AVAILABLE", fg=ui.BAD)
+        ui.text(console, dx, y + 10,
+                ui.clip("Fly within scanner range to detect this market.", dw),
+                fg=ui.DIM)
+        ui.text(console, dx, y + 11,
+                ui.clip("The star itself remains visible on the galaxy chart.", dw),
+                fg=ui.FAINT)
         return
 
-    for i, (price, ms, sname, jumps) in enumerate(quotes):
-        line_y = dy + 3 + i
-        if line_y >= bottom - 3:
-            break
-        here = sname == start
-        fg = ui.PLAYER if here else ui.TEXT
-        ui.text(console, ix, line_y, ui.clip(sname, 18), fg=fg)
-        ui.text(console, ix + 20, line_y, ui.clip(ms.name, 28), fg=fg)
-        ui.right(console, ix + 52, line_y, _jumps(jumps), fg=ui.DIM)
-        ui.right(console, ix + 59, line_y, f"{price} cr", fg=ui.KEY)
-        band = price_band(price, average)
-        tag = ("▼ cheap" if band < 0 else "▲ dear" if band > 0 else "fair")
-        tag_fg = ui.GOOD if band < 0 else ui.WARN if band > 0 else ui.DIM
-        ui.text(console, ix + 61, line_y, tag, fg=tag_fg)
+    ui.text(console, dx, y + 5,
+            ui.clip("Markets: " + (", ".join(m["name"] for m in markets)
+                                   or "none"), dw), fg=ui.ACCENT)
+    ui.text(console, dx, y + 7, "COMMODITY", fg=ui.DIM)
+    ui.right(console, dx + 18, y + 7, "BUY", fg=ui.DIM)
+    ui.right(console, dx + 27, y + 7, "SELL", fg=ui.DIM)
+    ui.text(console, dx + 30, y + 7, "STATUS", fg=ui.DIM)
 
-    best = quotes[0]
-    worst = quotes[-1]
-    if best[1] is worst[1]:
-        line1 = f"Only {best[1].name} ({best[2]}) trades {good} nearby at {best[0]} cr."
-        line2 = "Fly within the scan range to compare more markets."
-    else:
-        line1 = f"Buy {best[1].name} ({best[2]}) at {best[0]} cr."
-        line2 = (f"Sell {worst[1].name} ({worst[2]}) at {worst[0]} cr, "
-                 f"+{worst[0] - best[0]}/unit.")
-    ui.text(console, ix, bottom - 2, ui.clip(line1, iw), fg=ui.TEXT)
-    ui.text(console, ix, bottom - 1, ui.clip(line2, iw), fg=ui.TEXT)
+    prices = _system_prices(markets)
+    ry = y + 8
+    if not prices:
+        ui.text(console, dx, ry, "No markets in this system.", fg=ui.DIM)
+    for good in COMMODITIES:
+        if good not in prices or ry >= bottom - 3:
+            continue
+        prices_row = prices[good]
+        ui.text(console, dx, ry, good, fg=ui.TEXT)
+        ui.right(console, dx + 18, ry,
+                 _price_range(prices_row["buy_lo"], prices_row["buy_hi"]),
+                 fg=ui.KEY)
+        ui.right(console, dx + 27, ry,
+                 str(prices_row["sell_hi"])
+                 if prices_row["sell_hi"] is not None else "-", fg=ui.GOOD)
+        ui.text(console, dx + 30, ry, status, fg=STATUS_FG[status])
+        ry += 1
 
+    ui.text(console, dx, bottom - 1,
+            ui.clip(f"LIVE refreshes every day in range; STALE keeps the "
+                    f"{_day(days)} snapshot.", dw), fg=ui.FAINT)
+
+
+# ---------------------------------------------------------------------------
+# Opportunities
+# ---------------------------------------------------------------------------
+
+def _opportunities(console, ec, x, y, ix, iw, bottom):
+    rows = intel.opportunities()
+    ui.text(console, ix, y, "COMMODITY", fg=ui.DIM)
+    ui.text(console, ix + 13, y, "BUY AT", fg=ui.DIM)
+    ui.text(console, ix + 38, y, "SELL AT", fg=ui.DIM)
+    ui.text(console, ix + 61, y, "DATA", fg=ui.DIM)
+    ui.right(console, ix + iw - 1, y, "GAIN", fg=ui.DIM)
+
+    if not rows:
+        ui.text(console, ix, y + 2,
+                "No positive spreads with sufficient intelligence yet.", fg=ui.DIM)
+        ui.text(console, ix, y + 3,
+                "Scan more markets within the Long-Range System Scanner's range.",
+                fg=ui.FAINT)
+        return
+
+    limit = min(len(rows), max(1, bottom - y - 8))
+    for i, row in enumerate(rows[:limit]):
+        line_y = y + 2 + i
+        buy, sell = row["buy"], row["sell"]
+        buy_text = f"{buy['buy']} cr {buy['system']}"
+        sell_text = f"{sell['sell']} cr {sell['system']}"
+        ui.text(console, ix, line_y, row["good"], fg=ui.TEXT)
+        ui.text(console, ix + 13, line_y, ui.clip(buy_text, 24),
+                fg=STATUS_FG[buy["status"]])
+        ui.text(console, ix + 38, line_y, ui.clip(sell_text, 24),
+                fg=STATUS_FG[sell["status"]])
+        ui.text(console, ix + 61, line_y, row["status"],
+                fg=STATUS_FG[row["status"]])
+        ui.right(console, ix + iw - 1, line_y, f"+{row['spread']}",
+                 fg=ui.KEY if row["status"] == intel.LIVE else ui.WARN)
+
+    top = rows[0]
+    ui.hline(console, x, bottom - 6, W, fg=ui.BORDER_HI)
+    ui.text(console, ix, bottom - 5, "BEST KNOWN SPREAD", fg=ui.TITLE)
+    ui.text(console, ix, bottom - 4,
+            ui.clip(f"{top['good']}: {top['buy']['buy']} cr at "
+                    f"{top['buy']['market']} ({top['buy']['system']}) → "
+                    f"{top['sell']['sell']} cr at {top['sell']['market']} "
+                    f"({top['sell']['system']}), +{top['spread']}/unit.", iw),
+            fg=ui.TEXT)
+    ui.text(console, ix, bottom - 3,
+            ui.clip("Potential opportunity only. Cargo space, fuel, travel time and "
+                    "later market movement can erase the margin.", iw), fg=ui.DIM)
+    ui.text(console, ix, bottom - 2,
+            ui.clip("LIVE = both legs current · STALE = at least one leg uses last "
+                    "known data.", iw), fg=ui.FAINT)
+    ui.text(console, ix, bottom - 1,
+            ui.clip("Sell figures are what the station pays after its normal spread.",
+                    iw), fg=ui.FAINT)
+
+
+# ---------------------------------------------------------------------------
+# Routes (older Exchange feature, retained)
+# ---------------------------------------------------------------------------
 
 def _route_table(console, ec, ix, iw, y, title, routes, bottom):
     """Draw one route table and return the next free y."""
@@ -549,14 +565,7 @@ def _route_table(console, ec, ix, iw, y, title, routes, bottom):
 
 
 def _routes(console, ec, x, y, ix, iw, bottom):
-    if not state.market_scanner:
-        _scanner_locked(
-            console, ix, iw, y, bottom, "TRADE ROUTES",
-            "Track the lanes freighters are using, what they carry, and "
-            "where pirates are raiding.")
-        return
-    start = _start_system()
-    near = set(ec.systems_within(start)) if start else set()
+    near = set(intel.coverage())
     local, remote = [], []
     for volume, edge, good in ec.top_routes(120):
         (local if edge[0] in near or edge[1] in near else remote).append(
@@ -565,7 +574,7 @@ def _routes(console, ec, x, y, ix, iw, bottom):
     shown = _route_table(console, ec, ix, iw, y,
                          "NEARBY TRADE LANES (last 7 days)", local[:12], bottom)
     if not local:
-        ui.text(console, ix, y + 2, "No traffic touching your scan range yet.",
+        ui.text(console, ix, y + 2, "No traffic touching your scanner range yet.",
                 fg=ui.DIM)
         shown = y + 4
 
@@ -584,6 +593,17 @@ def _routes(console, ec, x, y, ix, iw, bottom):
 # Frame
 # ---------------------------------------------------------------------------
 
+def tab_count(tab):
+    """Rows the UP/DOWN cursor can move through on the current tab."""
+    if state.economy is None:
+        return 0
+    if tab == 1:
+        return len(COMMODITIES)
+    if tab == 2:
+        return len(intel.directory())
+    return 0
+
+
 def draw(console, width, height=ui.MAP_H):
     H = min(58, ui.MAP_H - 2)        # fits shorter (mobile) screens
     ec = state.economy
@@ -595,6 +615,13 @@ def draw(console, width, height=ui.MAP_H):
                   fg=ui.DIM)
         return
 
+    # Opening the Exchange already refreshes the scanner in core.events.
+    # Here we only sweep once per day (or if the current record is missing),
+    # so drawing at 60 FPS does no repeated economy snapshots.
+    current = _start_system()
+    if current is None or intel.last_update(current) != state.day:
+        intel.refresh()
+
     tab = state.exchange_tab % len(TABS)
     tx = ix
     for i, name in enumerate(TABS):
@@ -605,11 +632,11 @@ def draw(console, width, height=ui.MAP_H):
         tx += len(label) + 1
     ui.hline(console, x, y + 3, W, fg=ui.BORDER_HI)
 
-    body = (_overview, _markets, _goods, _routes)[tab]
+    body = (_overview, _commodities, _systems, _opportunities, _routes)[tab]
     body(console, ec, x, y + 5, ix, iw, y + H - 3)
 
     hints = [("←→", "Tab"), ("E", "Close")]
-    if tab in (1, 2) and state.market_scanner:
+    if tab in (1, 2):
         hints.insert(1, ("↑↓", "Select"))
     if state.DEBUG:
         hints.append(("F", "+1 day"))

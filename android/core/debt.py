@@ -23,9 +23,14 @@ def advance_day():
 
     # the galaxy economy moves on (NPC trades, prices, stocks, news), but in
     # steps of PRICE_UPDATE_DAYS so prices hold still between updates
-    from core import economy
+    from core import economy, market_intel, save
     if state.day % economy.PRICE_UPDATE_DAYS == 0:
         economy.tick(economy.PRICE_UPDATE_DAYS)
+
+    # Scanner records are a separate layer: refresh only what is in range,
+    # then persist the player's intelligence alongside the seed.
+    market_intel.refresh()
+    save.save_progress()
 
     left = days_left()
     if state.debt > 0 and left in WARN_AT:

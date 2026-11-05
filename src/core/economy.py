@@ -46,13 +46,12 @@ MIN_SUPPLY = 12.0
 PRICE_CLAMP = (0.45, 2.6)
 
 PLAN_DEPTH = 3        # jumps an NPC trader looks ahead
-SCAN_DEPTH = 1        # base jumps of price data in the Galactic Exchange (shipyard upgrades add more)
 
 
 def scan_depth():
-    """Current Exchange scan range in jumps (base + shipyard upgrades)."""
-    from core import shipyard
-    return shipyard.exchange_depth()
+    """Current Long-Range System Scanner radius in jumps."""
+    from core import scanner
+    return scanner.radius()
 PRICE_BAND = 0.15     # ±15% vs the regional average counts as cheap/dear
 HISTORY = 120         # days of history kept for charts
 ROUTE_WINDOW = 7      # days of traffic that make a "trade route"
@@ -122,6 +121,7 @@ class MarketState:
         self.market = market                 # the dict the rest of the game reads
         self.system = system                 # system name
         self.locations = locations           # location names using this market
+        self.id = None                       # stable market id, set by Economy
         self.eq = dict(market)               # equilibrium prices
         self.supply = {c: S0 for c in market}
         self.target = {c: S0 for c in market}
@@ -221,6 +221,9 @@ class Economy:
                     by_id[key].locations.append(loc.name)
                     continue
                 ms = MarketState(loc.market, s.name, [loc.name])
+                # Stable within a galaxy seed: markets are created in a
+                # deterministic order (planets, then stations) per system.
+                ms.id = f"{s.name}:{len(self.markets_in[s.name])}"
                 by_id[key] = ms
                 self.markets.append(ms)
                 self.markets_in[s.name].append(ms)

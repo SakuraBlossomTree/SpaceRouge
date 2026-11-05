@@ -3172,5 +3172,321 @@
         "day": 12
       }
     }
+  },
+  "3358666181": {
+    "Food": {
+      "Lyrae Nova": {
+        "price": 16,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 7,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 13,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Water": {
+      "Lyrae Nova": {
+        "price": 7,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 3,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 10,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Ore": {
+      "Lyrae Nova": {
+        "price": 17,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 16,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 17,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Rare Minerals": {
+      "Lyrae Nova": {
+        "price": 40,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 39,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 56,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Machinery": {
+      "Lyrae Nova": {
+        "price": 44,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 47,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 30,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Medicine": {
+      "Lyrae Nova": {
+        "price": 39,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 27,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 13,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Electronics": {
+      "Lyrae Nova": {
+        "price": 37,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 46,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 22,
+        "system": "Iota Major",
+        "day": 19
+      }
+    },
+    "Luxury Goods": {
+      "Lyrae Nova": {
+        "price": 52,
+        "system": "Epsilon Point",
+        "day": 4
+      },
+      "Puppis Nova": {
+        "price": 50,
+        "system": "Sigma Gate",
+        "day": 11
+      },
+      "Reach Eos": {
+        "price": 48,
+        "system": "Iota Major",
+        "day": 19
+      }
+    }
+  },
+  "3982047066": {
+    "Food": {
+      "Kepler": {
+        "price": 12,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 13,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 17,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 14,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Water": {
+      "Kepler": {
+        "price": 8,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 10,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 10,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 9,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Ore": {
+      "Kepler": {
+        "price": 15,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 22,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 10,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 16,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Rare Minerals": {
+      "Kepler": {
+        "price": 38,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 40,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 26,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 57,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Machinery": {
+      "Kepler": {
+        "price": 31,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 22,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 47,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 31,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Medicine": {
+      "Kepler": {
+        "price": 26,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 24,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 24,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 15,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Electronics": {
+      "Kepler": {
+        "price": 35,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 20,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 36,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 25,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    },
+    "Luxury Goods": {
+      "Kepler": {
+        "price": 50,
+        "system": "Zeta Prime",
+        "day": 4
+      },
+      "Velorum Gorn": {
+        "price": 51,
+        "system": "Psi Cross",
+        "day": 11
+      },
+      "Haven Aquilae": {
+        "price": 52,
+        "system": "Gamma Major",
+        "day": 24
+      },
+      "Velorum Bastion": {
+        "price": 48,
+        "system": "Psi Gate",
+        "day": 26
+      }
+    }
   }
 }
