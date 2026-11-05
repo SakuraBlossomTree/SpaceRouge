@@ -38,6 +38,12 @@ def notes():
     return _load().setdefault(str(state.galaxy_seed), [])
 
 
+def forget(seed):
+    """Drop every note for a galaxy seed (the practice galaxy restarts clean)."""
+    if _load().pop(str(seed), None) is not None:
+        _save()
+
+
 def add(text):
     text = text.strip()[:MAX_LEN]
     if not text:

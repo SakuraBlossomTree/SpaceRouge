@@ -10,7 +10,7 @@ from core.missions import generate_missions
 from core.debt import advance_day, check_deadline
 from core.world import FUEL_PRICES, sell_price
 from core import travel, quickmenu
-from core.save import save
+from core.save import save_progress
 from core.encounter import check_arrival, check_jump
 
 LOOK_SCREENS = ("SYSTEM", "GALAXY")
@@ -61,12 +61,16 @@ def handle_event(event, story_text, context):
     if not isinstance(event, tcod.event.KeyDown):
         return
 
-    # "Quit the game?" box: Y / ENTER quits, anything else cancels
+    # Q box: Y / ENTER confirms, anything else cancels. On the title screen
+    # it quits the game; in a session it saves and goes back to the title.
     if state.quit_confirm:
         state.quit_confirm = False
         if event.sym in (tcod.event.KeySym.Y, tcod.event.KeySym.RETURN, tcod.event.KeySym.KP_ENTER):
-            audio.shutdown()
-            raise SystemExit()
+            if state.game_state == "TITLE":
+                audio.shutdown()
+                raise SystemExit()
+            from core import newgame
+            newgame.return_to_title()
         return
 
     # Quick menu (SPACE): while it's open it gets every key
@@ -116,12 +120,17 @@ def handle_event(event, story_text, context):
                 state.overlay_return = state.game_state
             state.game_state = overlay
             state.message_scroll = 0
+            if overlay == "EXCHANGE":
+                from core import market_intel
+                if market_intel.refresh():
+                    save_progress()
         return
 
     if event.sym == tcod.event.KeySym.Q and state.seed_input is None:
         if state.game_state in ("GAME_OVER", "VICTORY"):
-            audio.shutdown()
-            raise SystemExit()
+            from core import newgame
+            newgame.return_to_title()
+            return
         state.quit_confirm = True
         return
 
@@ -235,15 +244,25 @@ def _title(event, story_text):
             state.seed_input = None
         return
 
+    practice = tutorial.enabled()     # tutorial ON: play the practice galaxy first
+
     if sym == tcod.event.KeySym.RETURN:
+        if practice:
+            # the title's galaxy waits; the tutorial plays on its own fixed seed
+            newgame.begin_tutorial_run()
+        else:
+            # Commit the galaxy currently on the title (fresh or restored with L).
+            save_progress()
         state.game_state = "STORY"
         state.story_scroll = 0
         state.story_follow = True
+    elif practice:
+        return                      # S / L pick the real galaxy: tutorial OFF only
     elif sym == tcod.event.KeySym.S:
         state.seed_input = ""
     elif sym == tcod.event.KeySym.L and state.last_seed is not None \
             and state.last_seed != state.galaxy_seed:
-        newgame.build_galaxy(state.last_seed)
+        newgame.build_galaxy(state.last_seed, restore=True)
 
 
 STORY_LINE_STEP = 1
@@ -525,6 +544,9 @@ def _jumppoint(event, story_text):
             travel.check_stranded()
             return
         state.fuel -= need
+        # A jump is a fresh departure; don't let the old in-system move
+        # counter trigger another day immediately after arriving.
+        state.move_counter = 0
         advance_day()
 
         state.pending_destination = (state.current_object.destination)
@@ -753,6 +775,8 @@ def _shipyard(event, story_text):
     elif sym in _key("RETURN", "KP_ENTER"):
         ok, message = shipyard.buy(shipyard.UPGRADES[state.shipyard_index][0])
         state.add_message(message)
+        if ok:
+            save_progress()
 
 
 _DIGIT_KEYS = {}
@@ -792,7 +816,7 @@ def _pay_debt(amount):
 
 
 def _victory(event, story_text):
-    """Loan paid off: C / ENTER go back to flying (Q quits, handled globally)."""
+    """Loan paid off: C / ENTER go back to flying (Q goes to the main menu, handled globally)."""
     if event.sym in _key("C", "RETURN", "KP_ENTER"):
         state.victory_seen = True
         state.game_state = "LOCATION"
@@ -1121,6 +1145,9 @@ def _exchange(event, story_text):
             state.exchange_index = (state.exchange_index + step) % n
     elif sym == tcod.event.KeySym.F and state.DEBUG and state.economy:
         state.economy.tick()      # debug: run the economy one day forward
+        from core import market_intel
+        if market_intel.refresh():
+            save_progress()
 
 
 def _radio(event, story_text):
@@ -1267,6 +1294,9 @@ def update_hyperspace():
                     state.hyperspace_stage = 0
 
                     state.game_state = "SYSTEM"
+                    from core import market_intel
+                    market_intel.refresh()
+                    save_progress()
                     check_deadline()
                     travel.check_stranded()
 

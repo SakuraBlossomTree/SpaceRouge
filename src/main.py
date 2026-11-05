@@ -6,7 +6,16 @@ loop: update -> draw -> present -> handle events.
 All drawing is handled by render/screen.py (layout + every screen).
 """
 
+import os
+import sys
 import time
+
+# Built with PyInstaller (build_exe.bat): the game's files (story, fonts, music)
+# and its saves live in the bundle folder, and every path in the game is
+# relative, so start there.
+if getattr(sys, "frozen", False):
+    os.chdir(getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)))
+
 import tcod
 
 from pathlib import Path

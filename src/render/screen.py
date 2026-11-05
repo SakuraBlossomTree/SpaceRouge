@@ -88,10 +88,15 @@ def _quit_box(console):
     w, h = 40, 7
     x, y = (console.width - w) // 2, (console.height - h) // 2
     console.draw_rect(x + 1, y + 1, w, h, ord(" "), bg=(0, 0, 0))
-    ui.frame(console, x, y, w, h, "Quit", fg=ui.BAD)
-    ui.center(console, x + w // 2, y + 2, "Quit the game?", fg=ui.TEXT)
-    ui.center(console, x + w // 2, y + 3, "Unsaved progress will be lost.", fg=ui.DIM)
-    ui.hint_row_centered(console, x + w // 2, y + 5, [("Y", "Quit"), ("N/ESC", "Keep playing")])
+    if state.game_state == "TITLE":
+        ui.frame(console, x, y, w, h, "Quit", fg=ui.BAD)
+        ui.center(console, x + w // 2, y + 2, "Quit the game?", fg=ui.TEXT)
+        ui.hint_row_centered(console, x + w // 2, y + 5, [("Y", "Quit"), ("N/ESC", "Cancel")])
+        return
+    ui.frame(console, x, y, w, h, "Main menu", fg=ui.BAD)
+    ui.center(console, x + w // 2, y + 2, "Back to the main menu?", fg=ui.TEXT)
+    ui.center(console, x + w // 2, y + 3, "Your galaxy progress is saved.", fg=ui.DIM)
+    ui.hint_row_centered(console, x + w // 2, y + 5, [("Y", "Main menu"), ("N/ESC", "Keep playing")])
 
 
 def compose(console, map_con, stars, title_text, story_text):

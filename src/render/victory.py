@@ -47,4 +47,4 @@ def draw(console, width, height):
           value_fg=ui.GOOD, bg=bg)
 
     ui.hint_row_centered(console, x + W // 2, y + H - 2,
-                         [("C", "Keep flying"), ("Q", "Quit")], bg=bg)
+                         [("C", "Keep flying"), ("Q", "Main menu")], bg=bg)

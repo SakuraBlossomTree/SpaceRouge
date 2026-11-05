@@ -326,40 +326,6 @@ def draw(console, width, height, stars):
 PREVIEW_OX, PREVIEW_OY = 5, 6       # system map (0..70 x 0..50) inside the viewport
 GATE_FG = (90, 210, 220)
 
-# Maximum number of jump-gate hops from the player's current system for which
-# a full system preview is available. Set this to 2 when a future scanner
-# upgrade increases the player's preview range.
-SYSTEM_PREVIEW_JUMP_RANGE = 2
-
-
-def configure_preview_range(jump_range):
-    """Set the maximum preview distance in jump-gate hops (0 = current only)."""
-    global SYSTEM_PREVIEW_JUMP_RANGE
-    SYSTEM_PREVIEW_JUMP_RANGE = max(0, int(jump_range))
-
-
-def jumps_between(stars, a, b):
-    """Fewest jump-gate hops from system a to system b (None if unreachable)."""
-    if a == b:
-        return 0
-    by_name = {s.name: s for s in stars}
-    if a not in by_name or b not in by_name:
-        return None
-    seen, frontier, hops = {a}, [a], 0
-    while frontier:
-        hops += 1
-        nxt = []
-        for name in frontier:
-            for jp in by_name[name].system.jump_points:
-                d = jp.destination
-                if d == b:
-                    return hops
-                if d not in seen and d in by_name:
-                    seen.add(d)
-                    nxt.append(d)
-        frontier = nxt
-    return None
-
 
 def preview_target(stars):
     """Which star zooming in should open: the scanned one, else the nearest
@@ -381,7 +347,8 @@ def preview_rows(star, stars):
     system = star.system
     here_name = state.current_system.name if state.current_system else None
     here = here_name == star.name
-    hops = None if here or not here_name else jumps_between(stars, here_name, star.name)
+    hops = None if here or not here_name else view.jumps_between(
+        stars, here_name, star.name)
     markets = sum(1 for loc in [*system.planets, *system.stations] if loc.market)
     fuel = FUEL_PRICES.get(system.archetype)
     contracts = sum(1 for m in state.missions
@@ -424,20 +391,33 @@ def _draw_preview_card(console, height, star, stars):
         ui.kv(console, x0 + 2, y0 + 2 + len(lines) + i, w - 4, k, v, value_fg=fg, bg=bg)
 
 
-def _system_preview_available(star, stars):
-    """Show system maps up to SYSTEM_PREVIEW_JUMP_RANGE gates from the player."""
+def _preview_tier(star, stars):
+    """How much of a preview the scanner can supply.
+
+    ``full``     - inside scanner range: map plus all labels.
+    ``observed`` - one jump beyond range: map shapes only, no labels.
+    ``none``     - no survey data: the generic database screen.
+    """
     current = state.current_system
     if current is None:
-        return bool(state.current_star and state.current_star.name == star.name)
+        return ("full" if state.current_star and state.current_star.name == star.name
+                else "none")
     if star.name == current.name:
-        return True
+        return "full"
 
-    hops = jumps_between(stars, current.name, star.name)
-    return hops is not None and hops <= SYSTEM_PREVIEW_JUMP_RANGE
+    from core import scanner
+    hops = view.jumps_between(stars, current.name, star.name)
+    if hops is None:
+        return "none"
+    if hops <= scanner.radius():
+        return "full"
+    if hops <= scanner.observed_radius():
+        return "observed"
+    return "none"
 
 
 def _draw_no_data_preview(console, width, height, star):
-    """Display a generic database screen when the system is beyond one jump."""
+    """Display a generic database screen when the system is beyond observation."""
     bg = (10, 14, 28)
     console.draw_rect(0, 0, width, height, ord(" "), bg=(6, 9, 17))
 
@@ -459,11 +439,12 @@ def _draw_no_data_preview(console, width, height, star):
     detail = "No survey records are available for this system."
     _text(console, max(0, (width - len(detail)) // 2), y0 + 4,
           detail, ui.TEXT, bg)
-    if SYSTEM_PREVIEW_JUMP_RANGE == 0:
-        hint_text = "Only your current system has available survey data."
-    else:
-        unit = "jump" if SYSTEM_PREVIEW_JUMP_RANGE == 1 else "jumps"
-        hint_text = f"System previews are available within {SYSTEM_PREVIEW_JUMP_RANGE} {unit}."
+    from core import scanner
+    radius = scanner.radius()
+    unit = "jump" if radius == 1 else "jumps"
+    hint_text = (f"Long-Range System Scanner survey range: {radius} {unit}. "
+                 "Upgrade at a shipyard.")
+    hint_text = ui.clip(hint_text, panel_w - 2)
     _text(console, max(0, (width - len(hint_text)) // 2), y0 + 5,
           hint_text, ui.FAINT, bg)
 
@@ -475,8 +456,10 @@ def _draw_no_data_preview(console, width, height, star):
 
 def draw_preview(console, width, height, star, stars, card=False):
     # The galaxy chart remains unchanged; detailed system data is local to
-    # the current system and its directly connected jump destinations.
-    if not _system_preview_available(star, stars):
+    # the current system and its scanner range.  Just beyond that range the
+    # map is still visible, but object labels need a closer survey.
+    tier = _preview_tier(star, stars)
+    if tier == "none":
         _draw_no_data_preview(console, width, height, star)
         return
 
@@ -508,17 +491,18 @@ def draw_preview(console, width, height, star, stars, card=False):
     def label(x, y, text, fg):
         _label(console, x + ox, Y(y) + oy, text, fg, force=True)
 
-    for p in system.planets:
-        tag = "  ! contract" if p.name in targets else ""
-        label(p.x, p.y, p.name + tag, ui.KEY if tag else (95, 105, 135))
-    for st in system.stations:
-        tag = "  ! contract" if st.name in targets else ""
-        label(st.x, st.y, st.name + tag, ui.KEY if tag else (95, 105, 135))
-    for jp in system.jump_points:
-        if jp.destination == here_name and not here:
-            label(jp.x, jp.y, f"→ {jp.destination} (you arrive here)", ui.PLAYER)
-        else:
-            label(jp.x, jp.y, f"→ {jp.destination}", (70, 130, 140))
+    if tier == "full":
+        for p in system.planets:
+            tag = "  ! contract" if p.name in targets else ""
+            label(p.x, p.y, p.name + tag, ui.KEY if tag else (95, 105, 135))
+        for st in system.stations:
+            tag = "  ! contract" if st.name in targets else ""
+            label(st.x, st.y, st.name + tag, ui.KEY if tag else (95, 105, 135))
+        for jp in system.jump_points:
+            if jp.destination == here_name and not here:
+                label(jp.x, jp.y, f"→ {jp.destination} (you arrive here)", ui.PLAYER)
+            else:
+                label(jp.x, jp.y, f"→ {jp.destination}", (70, 130, 140))
 
     for p in system.planets:
         _put(console, p.x + ox, Y(p.y) + oy, "○", ui.vivid(p.color))
@@ -547,6 +531,10 @@ def draw_preview(console, width, height, star, stars, card=False):
 
     _draw_zoom_bar(console, routes=False)
     hint = "[-] Back  [TAB] Next  [M] Close"
+    if tier == "observed":
+        note = "DISTANT OBSERVATION · labels unavailable"
+        if width >= len(note) + len(hint) + 6:
+            _text(console, 2, height - 1, note, ui.FAINT)
     _text(console, width - len(hint) - 1, height - 1, hint, ui.FAINT)
 
     state.look_object = star

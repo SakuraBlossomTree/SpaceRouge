@@ -12,6 +12,8 @@ map viewport. `scale` is how many world units one screen cell covers:
 All the maths lives here so the renderer and the input handler agree.
 """
 
+from collections import deque
+
 from core import state
 from core.world import GALAXY_W, GALAXY_H
 
@@ -159,6 +161,38 @@ def jump_links(stars, depth):
     return edges, seen - {here}
 
 
+def jump_distances(stars, start, depth=None):
+    """{system: jumps} reachable from `start` through real jump gates.
+
+    This is the shared shortest-path helper for the Long-Range System
+    Scanner and system previews.  Systems with no gate path are absent,
+    and `depth=None` means "the whole connected galaxy".
+    """
+    by_name = {s.name: s for s in stars}
+    if start not in by_name:
+        return {}
+    dist = {start: 0}
+    q = deque([start])
+    while q:
+        name = q.popleft()
+        d = dist[name]
+        if depth is not None and d >= depth:
+            continue
+        for jp in by_name[name].system.jump_points:
+            dest = jp.destination
+            if dest in by_name and dest not in dist:
+                dist[dest] = d + 1
+                q.append(dest)
+    return dist
+
+
+def jumps_between(stars, a, b):
+    """Fewest jump-gate hops from system a to system b (None if unreachable)."""
+    if a == b:
+        return 0
+    return jump_distances(stars, a).get(b)
+
+
 def star_at_cell(stars, sx, sy):
     """The star drawn at a screen cell (nearest to the cell centre if several)."""
     best, best_d = None, None
@@ -189,14 +223,9 @@ def scanned_systems():
 
 
 def scanner_range():
-    """Scanner radius in galaxy world-coordinate units (0 means no module).
-
-    The ship upgrade code should set state.galaxy_scanner_range.
-    """
-    try:
-        return max(0.0, float(getattr(state, "galaxy_scanner_range", 0.0)))
-    except (TypeError, ValueError):
-        return 0.0
+    """Scanner radius in jump-gate hops (always at least 1)."""
+    from core import scanner
+    return scanner.radius()
 
 
 def _scanner_origin(stars):
@@ -210,24 +239,21 @@ def _scanner_origin(stars):
 
 
 def scanner_distance(star, stars):
-    """Euclidean distance from the player to a star, in galaxy units."""
+    """Jump-gate hops from the player to a star (None if unreachable)."""
     origin = _scanner_origin(stars)
     if origin is None or star is None:
         return None
-    dx = star.x - origin.x
-    dy = star.y - origin.y
-    return (dx * dx + dy * dy) ** 0.5
+    return jumps_between(stars, origin.name, star.name)
 
 
 def scanner_covers(star, stars):
     """Whether the installed scanner currently reaches this system."""
-    radius = scanner_range()
     distance = scanner_distance(star, stars)
-    return radius > 0 and distance is not None and distance <= radius
+    return distance is not None and distance <= scanner_range()
 
 
 def is_system_scanned(star_or_name):
-    """Current and previously scanned systems may show their local system map."""
+    """Current and previously surveyed systems may show their local map."""
     name = getattr(star_or_name, "name", star_or_name)
     current_name = getattr(getattr(state, "current_star", None), "name", None)
     if current_name is None:
@@ -236,24 +262,17 @@ def is_system_scanned(star_or_name):
 
 
 def update_scanner(stars):
-    """Passively survey all systems inside the current scanner's radius.
+    """Passively note every system inside the current scanner's radius.
 
-    Call this when rendering the galaxy map (or from the world-update loop).
-    Discovered data is retained after the player moves away.
+    The dynamic LIVE/STALE market data lives in core.market_intel; this
+    set is the older exploration record, kept for compatibility and for
+    anything that wants a permanent list of surveyed systems.
     """
-    radius = scanner_range()
-    if radius <= 0:
-        return scanned_systems()
-
     origin = _scanner_origin(stars)
     if origin is None:
         return scanned_systems()
 
     known = scanned_systems()
-    radius_sq = radius * radius
-    for star in stars:
-        dx = star.x - origin.x
-        dy = star.y - origin.y
-        if dx * dx + dy * dy <= radius_sq:
-            known.add(star.name)
+    for name in jump_distances(stars, origin.name, scanner_range()):
+        known.add(name)
     return known
