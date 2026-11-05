@@ -22,7 +22,7 @@ from pathlib import Path
 from core import state, audio, fonts, tutorial, newgame
 from core.events import handle_event, update_hyperspace
 from core import travel
-from render import story, ui
+from render import story, ui, launch
 from render.screen import compose
 from render_classic import screen as classic_screen
 
@@ -36,7 +36,7 @@ def update_music():
     gs = state.game_state
     if gs == "TITLE":
         audio.ensure_music(TITLE_TRACK)
-    elif gs == "STORY":
+    elif gs == "STORY" or (gs == "LAUNCH" and launch.elapsed() < launch.MUSIC_AT):
         if audio.current_music_path:
             audio.stop_music()
     else:
@@ -97,6 +97,8 @@ def main():
             # --- Per-state updates ------------------------------------------
             if state.game_state == "STORY":
                 story.update(story_text)
+            elif state.game_state == "LAUNCH":
+                launch.update()
             elif state.game_state == "HYPERSPACE":
                 update_hyperspace()
             travel.update_autopilot()

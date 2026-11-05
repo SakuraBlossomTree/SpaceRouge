@@ -25,7 +25,7 @@ OVERLAY_KEYS = {
     tcod.event.KeySym.J: "NOTEBOOK",
     tcod.event.KeySym.K: "PRICELOG",
 }
-NO_OVERLAY_STATES = ("TITLE", "STORY", "HYPERSPACE", "GAME_OVER", "VICTORY")
+NO_OVERLAY_STATES = ("TITLE", "STORY", "LAUNCH", "HYPERSPACE", "GAME_OVER", "VICTORY")
 
 
 def _close_overlay():
@@ -171,7 +171,7 @@ def handle_event(event, story_text, context):
         state.day += 1
 
     if event.sym == tcod.event.KeySym.M:
-        if state.game_state not in ("TITLE", "STORY", "HYPERSPACE", "GALAXY",
+        if state.game_state not in ("TITLE", "STORY", "LAUNCH", "HYPERSPACE", "GALAXY",
                                     "GAME_OVER", "VICTORY", "COMBAT"):
             # overlays (cargo, log...) remember the screen under them
             back = state.game_state
@@ -293,10 +293,19 @@ def _story(event, story_text):
             state.story_scroll = 0
             state.story_follow = True
             if state.story_index >= len(state.story_texts):
-                state.game_state = "SYSTEM"
+                # story over: the ship's launch sequence plays, then the game
+                from render import launch
+                launch.start()
+                state.game_state = "LAUNCH"
             else:
                 state.story_char_index = 0
                 state.last_story_time = 0
+
+
+def _launch(event, story_text):
+    if event.sym in _key("RETURN", "KP_ENTER", "SPACE", "ESCAPE"):
+        from render import launch
+        launch.finish(skipped=True)
 
 
 def _key(*names):
@@ -1305,6 +1314,7 @@ def update_hyperspace():
 HANDLERS = {
     "TITLE": _title,
     "STORY": _story,
+    "LAUNCH": _launch,
     "GALAXY": _galaxy,
     "SYSTEM": _system,
     "JUMPPOINT": _jumppoint,

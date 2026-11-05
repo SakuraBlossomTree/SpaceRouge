@@ -105,6 +105,9 @@ last_story_time = 0.0
 story_scroll = 0         # first visible wrapped line
 story_follow = True      # keep the newest text in view while it is revealed
 
+# Launch sequence (render/launch.py): when it started; 0 = not running
+launch_start = 0.0
+
 
 # DEBUG menu interface so that I can quickly check what I am implementing
 DEBUG = False

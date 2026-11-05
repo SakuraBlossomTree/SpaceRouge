@@ -11,7 +11,8 @@ main.py calls compose() once per frame. Everything visual flows from here:
 """
 
 from core import state
-from render import ui, hud
+from effects import transitions as anim
+from render import ui, hud, launch
 from render import title, story, galaxy, system as system_render, jumppoint
 from render import hyperspace, location, market, inventory, messages
 from render import missions, mission_log, gameover, victory, planet, tutorial_panel
@@ -23,7 +24,11 @@ from render import combat as combat_render
 
 MODALS = ("JUMPPOINT", "LOCATION", "MARKET", "MISSIONS", "SHIPYARD")
 OVERLAYS = ("INVENTORY", "MESSAGES", "MISSION_LOG", "HELP", "EXCHANGE", "RADIO", "NOTEBOOK", "PRICELOG")
-FULLSCREEN = ("TITLE", "STORY", "GAME_OVER", "VICTORY")
+FULLSCREEN = ("TITLE", "STORY", "LAUNCH", "GAME_OVER", "VICTORY")
+
+# How long a menu takes to unfold / a screen to fade in (seconds)
+UNFOLD_TIME = 0.22
+FADE_TIME = 0.25
 
 
 def _viewport_title(gs):
@@ -59,6 +64,7 @@ def _draw_view(con, gs, stars, depth=0):
     elif gs in MODALS:
         _draw_view(con, "SYSTEM", stars, depth + 1)
         ui.dim_console(con, 0.28)
+        under = con.rgb.copy()
         {
             "JUMPPOINT": lambda: jumppoint.draw(con, W, H),
             "LOCATION": lambda: location.draw(con, W, H),
@@ -66,11 +72,14 @@ def _draw_view(con, gs, stars, depth=0):
             "MISSIONS": lambda: missions.draw(con, W, H),
             "SHIPYARD": lambda: shipyard_render.draw(con, W, H),
         }[gs]()
+        if depth == 0:
+            anim.unfold(con, under, anim.progress("screen", UNFOLD_TIME))
     elif gs in OVERLAYS:
         base = state.overlay_return or "SYSTEM"
         if depth < 3 and base not in OVERLAYS:
             _draw_view(con, base, stars, depth + 1)
         ui.dim_console(con, 0.28)
+        under = con.rgb.copy()
         {
             "INVENTORY": lambda: inventory.draw(con, W, H),
             "MESSAGES": lambda: messages.draw(con, W, H),
@@ -81,6 +90,8 @@ def _draw_view(con, gs, stars, depth=0):
             "NOTEBOOK": lambda: notebook_render.draw(con, W, H),
             "PRICELOG": lambda: pricelog_render.draw(con, W, H),
         }[gs]()
+        if depth == 0:
+            anim.unfold(con, under, anim.progress("screen", UNFOLD_TIME))
 
 
 def _quit_box(console):
@@ -100,10 +111,31 @@ def _quit_box(console):
 
 
 def compose(console, map_con, stars, title_text, story_text):
+    gs = state.game_state
+    anim.touch("screen", gs)
+    anim.touch("quit", state.quit_confirm)
+    anim.touch("quick", state.quick_menu)
     _compose(console, map_con, stars, title_text, story_text)
     if state.quit_confirm:
         ui.dim_console(console, 0.4)
+        under = console.rgb.copy()
         _quit_box(console)
+        anim.unfold(console, under, anim.progress("quit", UNFOLD_TIME))
+    _screen_transition(console, gs)
+
+
+def _screen_transition(console, gs):
+    """Whole-screen fades: new screens fade up from black, and the launch
+    sequence's white-out fades down into the first view of the game. Menus
+    opening and closing over a screen have their own animation, so they are
+    left alone."""
+    if gs in MODALS or gs in OVERLAYS:
+        return
+    prev = anim.previous("screen")
+    if prev == "LAUNCH":
+        anim.flash_in(console, anim.progress("screen", 0.9))
+    elif prev not in MODALS and prev not in OVERLAYS:
+        anim.fade_in(console, 0.15 + 0.85 * anim.progress("screen", FADE_TIME))
 
 
 def _compose(console, map_con, stars, title_text, story_text):
@@ -115,6 +147,9 @@ def _compose(console, map_con, stars, title_text, story_text):
         return
     if gs == "STORY":
         story.draw(console, ui.SCREEN_H, story_text, ui.SCREEN_W)
+        return
+    if gs == "LAUNCH":
+        launch.draw(console, ui.SCREEN_W, ui.SCREEN_H)
         return
     if gs == "GAME_OVER":
         gameover.draw(console, ui.SCREEN_W, ui.SCREEN_H)
@@ -128,7 +163,9 @@ def _compose(console, map_con, stars, title_text, story_text):
     tutorial_panel.draw(map_con)
     if state.quick_menu:
         from render import quickmenu as quick_render
+        under = map_con.rgb.copy()
         quick_render.draw(map_con)
+        anim.unfold(map_con, under, anim.progress("quick", UNFOLD_TIME))
 
     t, rt = _viewport_title(gs)
     ui.frame(console, 0, 0, ui.MAP_W + 2, ui.MAP_H + 2, t, right_title=rt,

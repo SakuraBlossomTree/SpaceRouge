@@ -13,7 +13,7 @@ IX = X + 2            # inner x
 IW = W - 4            # inner width
 
 # Screens that take over the whole window (no sidebar)
-FULLSCREEN = ("TITLE", "STORY", "GAME_OVER", "VICTORY")
+FULLSCREEN = ("TITLE", "STORY", "LAUNCH", "GAME_OVER", "VICTORY")
 
 
 # ---------------------------------------------------------------------------

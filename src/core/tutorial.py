@@ -143,7 +143,7 @@ STEPS = [
     ("Ready for the real thing?", _finish_text, "info", None),
 ]
 
-HIDDEN_STATES = ("TITLE", "STORY", "GAME_OVER", "VICTORY", "HYPERSPACE", "COMBAT")
+HIDDEN_STATES = ("TITLE", "STORY", "LAUNCH", "GAME_OVER", "VICTORY", "HYPERSPACE", "COMBAT")
 
 
 def enabled():

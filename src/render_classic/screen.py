@@ -23,6 +23,10 @@ def compose(console, stars, title_text, story_text):
         title.draw(console, WIDTH, HEIGHT, title_text)
     elif gs == "STORY":
         story.draw(console, HEIGHT, story_text)
+    elif gs == "LAUNCH":
+        from render import launch
+        launch.draw(console, WIDTH, HEIGHT)
+        return
     elif gs == "GALAXY":
         galaxy.draw(console, WIDTH, HEIGHT, stars)
     elif gs == "SYSTEM":

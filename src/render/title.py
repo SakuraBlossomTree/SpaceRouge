@@ -6,6 +6,7 @@ import time
 
 from core import fonts, state, tutorial
 from effects.effects import twinkle_color
+from effects import transitions
 from render import ui
 
 _stars = None
@@ -52,13 +53,20 @@ def draw(console, width, height, title_text):
     lx = (width - lw) // 2
     ly = height // 2 - len(lines) - 6
     console.draw_rect(lx - 3, ly - 2, lw + 6, len(lines) + 4, ord(" "), bg=ui.BG)
+    # on entering the title the logo is swept in from the left by a bright edge
+    sweep = transitions.age("screen") * 110 - 10
     for i, line in enumerate(lines):
         for j, ch in enumerate(line):
             if ch == " ":
                 continue
+            reach = sweep - i * 3 - j
+            if reach < 0:
+                continue
             k = i / max(1, len(lines) - 1)
             shimmer = 0.85 + 0.15 * math.sin(t * 2.0 - j * 0.15)
             fg = ui.scale_color(ui.lerp_color(LOGO_TOP, LOGO_BOTTOM, k), shimmer)
+            if reach < 12:                        # the leading edge glows white
+                fg = ui.lerp_color((255, 255, 255), fg, reach / 12)
             console.print(lx + j, ly + i, ch, fg=fg, bg=ui.BG)
 
     tag = f"A TRADER'S ROGUELIKE  ·  {state.starting_debt:,} CREDITS IN DEBT  ·  ONE SHIP"
