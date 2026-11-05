@@ -12,6 +12,11 @@ from core import state
 WARN_AT = (90, 30, 14, 7, 3, 1)      # days left at which the lender sends a reminder
 
 
+def loan_days():
+    """How many days a fresh loan lasts (day 1 up to the deadline day)."""
+    return state.STARTING_DEADLINE_DAY - 1
+
+
 def days_left():
     """Days until the lender wants the ship (0 or less = deadline reached)."""
     return state.loan_deadline_day - state.day

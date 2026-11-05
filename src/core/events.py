@@ -61,12 +61,16 @@ def handle_event(event, story_text, context):
     if not isinstance(event, tcod.event.KeyDown):
         return
 
-    # "Quit the game?" box: Y / ENTER quits, anything else cancels
+    # Q box: Y / ENTER confirms, anything else cancels. On the title screen
+    # it quits the game; in a session it saves and goes back to the title.
     if state.quit_confirm:
         state.quit_confirm = False
         if event.sym in (tcod.event.KeySym.Y, tcod.event.KeySym.RETURN, tcod.event.KeySym.KP_ENTER):
-            audio.shutdown()
-            raise SystemExit()
+            if state.game_state == "TITLE":
+                audio.shutdown()
+                raise SystemExit()
+            from core import newgame
+            newgame.return_to_title()
         return
 
     # Quick menu (SPACE): while it's open it gets every key
@@ -124,8 +128,9 @@ def handle_event(event, story_text, context):
 
     if event.sym == tcod.event.KeySym.Q and state.seed_input is None:
         if state.game_state in ("GAME_OVER", "VICTORY"):
-            audio.shutdown()
-            raise SystemExit()
+            from core import newgame
+            newgame.return_to_title()
+            return
         state.quit_confirm = True
         return
 
@@ -239,12 +244,20 @@ def _title(event, story_text):
             state.seed_input = None
         return
 
+    practice = tutorial.enabled()     # tutorial ON: play the practice galaxy first
+
     if sym == tcod.event.KeySym.RETURN:
-        # Commit the galaxy currently on the title (fresh or restored with L).
-        save_progress()
+        if practice:
+            # the title's galaxy waits; the tutorial plays on its own fixed seed
+            newgame.begin_tutorial_run()
+        else:
+            # Commit the galaxy currently on the title (fresh or restored with L).
+            save_progress()
         state.game_state = "STORY"
         state.story_scroll = 0
         state.story_follow = True
+    elif practice:
+        return                      # S / L pick the real galaxy: tutorial OFF only
     elif sym == tcod.event.KeySym.S:
         state.seed_input = ""
     elif sym == tcod.event.KeySym.L and state.last_seed is not None \
@@ -803,7 +816,7 @@ def _pay_debt(amount):
 
 
 def _victory(event, story_text):
-    """Loan paid off: C / ENTER go back to flying (Q quits, handled globally)."""
+    """Loan paid off: C / ENTER go back to flying (Q goes to the main menu, handled globally)."""
     if event.sym in _key("C", "RETURN", "KP_ENTER"):
         state.victory_seen = True
         state.game_state = "LOCATION"

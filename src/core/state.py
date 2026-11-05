@@ -53,6 +53,12 @@ pending_destination = None
 pending_origin = None
 starting_debt = 5000
 
+# What a fresh run starts with (core/newgame.py reset_run() puts these back)
+STARTING_CREDITS = 1000
+STARTING_CARGO = 20
+STARTING_FUEL = 100
+STARTING_DEADLINE_DAY = 31   # day the lender repossesses the ship
+
 hyperspace_stage = 0
 hyperspace_timer = 0.0
 hyperspace_complete = False
@@ -60,8 +66,8 @@ hyperspace_complete_timer = 0.0
 
 # --- Economy ------------------------------------------------------------------
 
-credits = 1000
-inventory = Inventory(20)
+credits = STARTING_CREDITS
+inventory = Inventory(STARTING_CARGO)
 
 player_ship = PlayerShip()
 
@@ -115,8 +121,8 @@ look_y = 0
 look_object = None   # whatever the look cursor is over (set by renderers)
 
 # We need fuel to make the player miserable 
-fuel = 100
-max_fuel = 100
+fuel = STARTING_FUEL
+max_fuel = STARTING_FUEL
 
 # day counter for the player (this can be later changed to an actual calendar)
 day = 1
@@ -124,7 +130,7 @@ move_counter = 0
 
 # this is debt mechanic if the player wants to win the game he has to remove the debt entirely
 debt = starting_debt     # no instalments: it only goes down when the player pays
-loan_deadline_day = 31  # lender repossesses the ship on this day (1 + 365 days) if debt is left
+loan_deadline_day = STARTING_DEADLINE_DAY  # lender repossesses the ship on this day if debt is left
 
 # this is the game over screen
 game_over_reason = ""
@@ -175,6 +181,8 @@ tutorial_done = False
 tutorial_step = 0
 tutorial_step_time = 0.0
 tutorial_baseline = {}
+tutorial_run = False    # True while playing the fixed practice galaxy (nothing is saved)
+real_seed = None        # the galaxy the title screen showed; the real game starts on it
 
 help_page = 0
 

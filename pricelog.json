@@ -3488,5 +3488,63 @@
         "day": 26
       }
     }
+  },
+  "73": {
+    "Food": {
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Water": {
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Ore": {
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Rare Minerals": {
+      "Earth": {
+        "price": 40,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Machinery": {
+      "Earth": {
+        "price": 28,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Medicine": {
+      "Earth": {
+        "price": 26,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Electronics": {
+      "Earth": {
+        "price": 36,
+        "system": "Sol",
+        "day": 1
+      }
+    },
+    "Luxury Goods": {
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      }
+    }
   }
 }

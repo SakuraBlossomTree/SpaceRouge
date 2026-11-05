@@ -9,13 +9,14 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from core import economy, market_intel, newgame, save, scanner, shipyard, state
+from core import economy, fonts, market_intel, newgame, save, scanner, shipyard, state
 from core.entities import JumpPoint, Planet, Star
 from core.world import BASE_PRICES, COMMODITIES
 
@@ -335,7 +336,10 @@ class PersistenceTests(unittest.TestCase):
 
         state.galaxy_seed = 777
         state.upgrades["scanrange"] = 1
-        events._title(SimpleNamespace(sym=tcod.event.KeySym.RETURN), "")
+        # with the tutorial ON, ENTER loads the practice galaxy instead
+        # (see test_tutorial_flow.py); this test is the normal start
+        with mock.patch.object(fonts, "settings", return_value={"tutorial": False}):
+            events._title(SimpleNamespace(sym=tcod.event.KeySym.RETURN), "")
 
         raw = json.loads(save.SAVE_PATH.read_text(encoding="utf-8"))
         self.assertEqual(raw["seed"], 777)

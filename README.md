@@ -131,7 +131,7 @@ Controls are subject to change as development continues.
 | F7 / F8             | Sound effects volume down / up           |
 | F10                 | Change font                              |
 | F11                 | Toggle fullscreen                        |
-| Q                   | Quit                                     |
+| Q                   | Save and return to the main menu         |
 
 ## Economy & Galactic Exchange
 

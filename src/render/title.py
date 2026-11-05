@@ -61,7 +61,7 @@ def draw(console, width, height, title_text):
             fg = ui.scale_color(ui.lerp_color(LOGO_TOP, LOGO_BOTTOM, k), shimmer)
             console.print(lx + j, ly + i, ch, fg=fg, bg=ui.BG)
 
-    tag = "A TRADER'S ROGUELIKE  ·  75,000 CREDITS IN DEBT  ·  ONE SHIP"
+    tag = f"A TRADER'S ROGUELIKE  ·  {state.starting_debt:,} CREDITS IN DEBT  ·  ONE SHIP"
     ui.center(console, width // 2, ly + len(lines) + 1, tag, fg=ui.DIM, bg=ui.BG)
 
     # menu box
@@ -90,6 +90,12 @@ def draw(console, width, height, title_text):
                   fg=ui.KEY, bg=panel)
         ui.hint_row_centered(console, width // 2, by + 11,
                              [("0-9", "Type"), ("ENTER", "Load"), ("ESC", "Cancel")], bg=panel)
+    elif on:
+        ui.center(console, width // 2, by + 9, "Tutorial: practice galaxy first",
+                  fg=ui.ACCENT, bg=panel)
+        ui.center(console, width // 2, by + 11,
+                  f"Then your real game, galaxy seed {state.galaxy_seed}",
+                  fg=ui.DIM, bg=panel)
     else:
         ui.center(console, width // 2, by + 9, f"Galaxy seed {state.galaxy_seed}",
                   fg=ui.DIM, bg=panel)

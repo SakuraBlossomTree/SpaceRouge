@@ -17,9 +17,9 @@ def draw(console, corner="bottom-left"):
     step = tutorial.current()
     if step is None:
         return
-    title, body, kind, _ = step
+    title, kind = step[0], step[2]
 
-    lines = ui.wrap(body, W - 4)
+    lines = ui.wrap(tutorial.body_text(step), W - 4)
     h = len(lines) + 6
     if corner == "top-right":         # classic UI keeps its text at the bottom
         x, y = console.width - W - 2, 5

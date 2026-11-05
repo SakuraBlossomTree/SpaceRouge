@@ -23,7 +23,7 @@ FULLSCREEN = ("TITLE", "STORY", "GAME_OVER", "VICTORY")
 HINTS = {
     "SYSTEM": [("←↑↓→", "Fly"), ("TAB", "Autopilot"), ("ENTER", "Dock"), ("X", "Scan"),
                ("M", "Galaxy"), ("I", "Cargo"), ("P", "Contracts"),
-               ("L", "Log"), ("E", "Exchange"), ("O", "Radio"), ("J", "Notes"), ("K", "Prices"), ("H", "Help"), ("Q", "Quit")],
+               ("L", "Log"), ("E", "Exchange"), ("O", "Radio"), ("J", "Notes"), ("K", "Prices"), ("H", "Help"), ("Q", "Menu")],
     "GALAXY": [("←↑↓→", "Scroll"), ("+/-", "Zoom (x2+ = system)"), ("Z", "Cycle zoom"),
                ("C", "Centre on you"), ("X", "Scan"), ("TAB", "Next star"),
                ("N", "Minimap"), ("R", "Routes"), ("M", "Close")],

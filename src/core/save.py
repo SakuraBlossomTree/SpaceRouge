@@ -54,6 +54,8 @@ def save_progress(seed=None):
     """Write current scanner level, market intelligence and survey record."""
     from core import market_intel, state
 
+    if getattr(state, "tutorial_run", False):
+        return None          # the practice galaxy is never saved
     try:
         galaxy_seed = int(seed if seed is not None else state.galaxy_seed)
     except (TypeError, ValueError):
