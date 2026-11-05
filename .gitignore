@@ -229,3 +229,6 @@ music_levels.json
 notebook.json
 pricelog.json
 save.json
+
+# keep the exe build recipe
+!SpaceRouge.spec
