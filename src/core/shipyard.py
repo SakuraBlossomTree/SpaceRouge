@@ -1,11 +1,12 @@
 """Shipyard: simple permanent ship upgrades, bought with credits.
 
 Each upgrade has one or more levels: (price, what it does). Levels are bought
-in order. State lives in state.upgrades ({id: level}); the Market Scanner is
-(the Market Scanner is fitted free from the start; Exchange Range extends it).
+in order. State lives in state.upgrades ({id: level}).  The Long-Range System
+Scanner is fitted free at level 0 (one jump); its upgrade levels extend the
+range using the central values in core.scanner.
 """
 
-from core import state
+from core import scanner, state
 
 # (id, name, [(price, description), ...])
 UPGRADES = [
@@ -15,17 +16,20 @@ UPGRADES = [
      [(500, "+50 fuel capacity"), (1400, "+50 fuel capacity")]),
     ("hull", "Hull Plating",
      [(700, "+25 max hull"), (1800, "+25 max hull")]),
-    ("scanrange", "Exchange Range",
-     [(1800, "The Galactic Exchange scans markets 2 jumps out"),
-      (4500, "The Galactic Exchange scans markets 3 jumps out"),
-      (10000, "The Galactic Exchange scans markets 4 jumps out")]),
+    ("scanrange", "Long-Range System Scanner",
+     [(1800, f"{scanner.LEVEL_NAMES[1]} scanner: market intelligence "
+              f"{scanner.RADII[1]} jumps out"),
+      (4500, f"{scanner.LEVEL_NAMES[2]} scanner: market intelligence "
+              f"{scanner.RADII[2]} jumps out"),
+      (10000, f"{scanner.LEVEL_NAMES[3]} scanner: market intelligence "
+               f"{scanner.RADII[3]} jumps out")]),
     ("jumprange", "Star Jump Scanner",
      [(1500, "Galaxy chart shows jump links 2 jumps out"),
       (4000, "Galaxy chart shows jump links 3 jumps out"),
       (9000, "Galaxy chart shows jump links 4 jumps out")]),
 ]
 
-BASE_EXCHANGE_DEPTH = 1  # jumps of markets the Exchange scans, before upgrades
+BASE_EXCHANGE_DEPTH = scanner.RADII[0]  # standard scanner range, before upgrades
 BASE_JUMP_VIEW = 1     # jumps of links the galaxy chart draws from your system, before upgrades
 
 _BY_ID = {u[0]: u for u in UPGRADES}
@@ -41,8 +45,8 @@ def jump_view_range():
 
 
 def exchange_depth():
-    """How many jumps of markets the Galactic Exchange scans."""
-    return BASE_EXCHANGE_DEPTH + state.upgrades.get("scanrange", 0)
+    """How many jumps of markets the Long-Range System Scanner reaches."""
+    return scanner.radius()
 
 
 def levels(uid):
@@ -62,7 +66,7 @@ def current_text(uid):
         "cargo": f"{state.inventory.space} units",
         "fuel": f"{state.max_fuel:.0f} fuel",
         "hull": f"{ship.max_hull} hull",
-        "scanrange": f"{exchange_depth()} jump{'s' if exchange_depth() != 1 else ''}",
+        "scanrange": f"{scanner.range_text()} · {scanner.level_name()} scanner",
         "jumprange": f"{jump_view_range()} jump{'s' if jump_view_range() != 1 else ''}",
     }[uid]
 

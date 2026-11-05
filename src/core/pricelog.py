@@ -53,6 +53,12 @@ def record(location, system, day):
     return len(location.market)
 
 
+def forget(seed):
+    """Drop everything recorded for a galaxy seed (the practice galaxy)."""
+    if _load().pop(str(seed), None) is not None:
+        _save()
+
+
 def clear():
     _load()[str(state.galaxy_seed)] = {}
     _save()

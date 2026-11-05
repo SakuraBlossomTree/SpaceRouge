@@ -48,4 +48,4 @@ def draw(console, width, height):
               f"{100 * paid / state.starting_debt:.1f}% of the loan repaid",
               fg=ui.DIM, bg=bg)
 
-    ui.hint_row_centered(console, x + W // 2, y + H - 2, [("Q", "Quit")], bg=bg)
+    ui.hint_row_centered(console, x + W // 2, y + H - 2, [("Q", "Main menu")], bg=bg)

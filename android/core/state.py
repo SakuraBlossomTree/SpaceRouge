@@ -128,7 +128,7 @@ loan_deadline_day = 31  # lender repossesses the ship on this day (1 + 365 days)
 
 # this is the game over screen
 game_over_reason = ""
-upgrades = {}               # shipyard upgrade levels (the scanner is market_scanner)
+upgrades = {}               # shipyard upgrade levels (scanrange = Long-Range System Scanner)
 shipyard_index = 0
 victory_seen = False     # the loan-paid-off screen has been shown (and dismissed)
 
@@ -183,7 +183,9 @@ help_page = 0
 economy = None
 exchange_tab = 0
 exchange_index = 0
-market_scanner = True     # Exchange market scanner: fitted free at the start
+market_scanner = True     # standard Long-Range System Scanner is fitted free
+market_intel = {}         # system name -> player-recorded market intelligence
+galaxy_scanned_systems = set()  # permanent exploration record
 galaxy_routes = False     # R on the galaxy chart: show trade-route heat
 
 # --- Seeds -------------------------------------------------------------------------

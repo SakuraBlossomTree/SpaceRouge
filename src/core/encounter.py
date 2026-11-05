@@ -6,6 +6,7 @@ arrives at a destination or jumps between star systems.
 
 import random
 
+from core import state
 from core.combat import CombatManager
 from core.ships import spawn_pirate
 
@@ -19,6 +20,8 @@ def roll_encounter(chance, player_ship):
     Roll for a combat encounter.
     Returns a CombatManager if an encounter triggers, otherwise None.
     """
+    if state.tutorial_run:
+        return None          # the practice galaxy is pirate-free
     if random.random() < chance:
         pirate = spawn_pirate()
         return CombatManager(player_ship, pirate)

@@ -58,8 +58,8 @@ PAGES = [
         "arrive. The ↑↓ arrows compare with the previous update.",
         "*The shipyard",
         "Press 2 when docked. Bigger cargo holds, fuel tanks and hull "
-        "plating, Exchange Range (scan farther) and the Star Jump "
-        "Scanner (more jump links on the chart).",
+        "plating, the Long-Range System Scanner (more market range) and the "
+        "Star Jump Scanner (more jump links on the chart).",
         "*Profit info",
         "The Trading Post shows what you paid on average, the profit per "
         "unit if you sold here, and the best sell and cheapest buy prices "
@@ -108,6 +108,8 @@ PAGES = [
         "shows one more jump of links; "
         "☼ marks contract destinations. Zoom in past x2 (or ENTER while "
         "scanning a star) to preview that system's planets, stations and gates. "
+        "Inside scanner range the map is fully labelled; one jump beyond it, "
+        "the map is visible but unlabelled, and farther systems show no data. "
         "If your scanner covers the system, the preview also shows the fuel "
         "for the gate route there.",
         "←↑↓→ | scroll (Shift = faster)",
@@ -126,9 +128,9 @@ PAGES = [
         "isn't paid by then the lender repossesses the Rogue and it's game "
         "over. The lender warns you at 90, 30, 14, 7, 3 and 1 days left.",
         "*Time",
-        "A day passes with every hyperspace jump and with every 50 moves "
-        "inside a system - flying is free, but time still passes. The day "
-        "counter is in the Ship panel.",
+        "A day passes with every hyperspace jump (which also resets the "
+        "50-move clock) and with every 50 moves inside a system - flying is "
+        "free, but time still passes. The day counter is in the Ship panel.",
         "*Paying",
         "There are no instalments. At any station press 6 (Pay Debt), type "
         "any amount and press ENTER - M fills in the most you can pay.",
@@ -155,17 +157,21 @@ PAGES = [
         "Dozens of NPC freighters fly the jump lanes every day, buying where "
         "goods are cheap and selling where they're dear. Every trade moves "
         "that market's price - and so do yours.",
-        "*Long-range scanner",
-        "Your ship starts with a market scanner, so the Exchange compares "
-        "nearby systems from day one. Buy Exchange Range at the shipyard "
-        "to scan one jump farther per level.",
-        "*Local market scan",
-        "The Exchange reports markets within 1 jump of your current system "
-        "to start. Fly on and the scan moves with you.",
+        "*Market intelligence",
+        "The Exchange is information only - buy and sell at station Trading "
+        "Posts. It shows LIVE markets inside scanner range, STALE last-known "
+        "records outside it, and UNKNOWN systems with no prices at all.",
+        "*Long-Range System Scanner",
+        "A standard scanner is fitted free and covers your system plus one "
+        "jump. Shipyard upgrades extend it to 2, 3 and 4 jumps. Distances "
+        "follow the real jump-gate network, never the chart's straight lines. "
+        "The system map also shows one jump beyond scanner range, but without "
+        "object labels. Fly on and the scan moves with you.",
         "*Cheap or dear?",
-        "Each good is compared with the regional average. ▼ means it is at "
-        "least 15% cheaper here (a good place to buy); ▲ means it is at "
-        "least 15% dearer (a good place to sell).",
+        "Each known buy price is compared with the known average. ▼ means it "
+        "is at least 15% cheaper (a good place to buy); ▲ means it is at "
+        "least 15% dearer (a good place to sell). STALE prices are historical, "
+        "never current.",
         "*Trade routes",
         "The lanes freighters use most become trade routes. Busy routes mean "
         "big price swings at both ends. Press R on the galaxy chart to see "
@@ -174,7 +180,7 @@ PAGES = [
         "Pirates on a route, mining strikes, harvests and shortages all move "
         "prices. Watch the wire for trade tips.",
         "E | open the Galactic Exchange",
-        "1-4 / ←→ | Overview, Markets, Goods, Routes",
+        "1-5 / ←→ | Overview, Commodities, Systems, Opportunities, Routes",
         "R | trade-route heat on the galaxy chart",
     ]),
     ("All controls", [

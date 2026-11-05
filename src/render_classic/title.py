@@ -72,6 +72,8 @@ def draw(console, width, height, title_text):
     console.print(width // 2 - len(options) // 2, prompt_y + 3, options, fg=(140, 140, 140))
     if state.seed_input is not None:
         seed_line = f"Seed: {state.seed_input}_   (ENTER load, ESC cancel)"
+    elif tutorial.enabled():
+        seed_line = f"Practice galaxy first, then your real game (seed {state.galaxy_seed})"
     else:
         seed_line = f"Galaxy seed {state.galaxy_seed}   S - Enter seed"
         if state.last_seed is not None and state.last_seed != state.galaxy_seed:
