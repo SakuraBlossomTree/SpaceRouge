@@ -3489,7 +3489,7 @@
       }
     }
   },
-  "73": {
+  "1046216188": {
     "Food": {
       "Earth": {
         "price": 11,
@@ -3520,7 +3520,7 @@
     },
     "Machinery": {
       "Earth": {
-        "price": 28,
+        "price": 31,
         "system": "Sol",
         "day": 1
       }
@@ -3544,6 +3544,363 @@
         "price": 52,
         "system": "Sol",
         "day": 1
+      }
+    }
+  },
+  "4007361263": {},
+  "3985971340": {
+    "Food": {
+      "Calyx Velorum": {
+        "price": 17,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 16,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Water": {
+      "Calyx Velorum": {
+        "price": 7,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 6,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Ore": {
+      "Calyx Velorum": {
+        "price": 16,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 16,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Rare Minerals": {
+      "Calyx Velorum": {
+        "price": 54,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 53,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Machinery": {
+      "Calyx Velorum": {
+        "price": 32,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 31,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Medicine": {
+      "Calyx Velorum": {
+        "price": 16,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 14,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Electronics": {
+      "Calyx Velorum": {
+        "price": 22,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 21,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    },
+    "Luxury Goods": {
+      "Calyx Velorum": {
+        "price": 49,
+        "system": "Eta Tertius",
+        "day": 6
+      },
+      "Havel Velorum": {
+        "price": 48,
+        "system": "Eta Tertius",
+        "day": 7
+      }
+    }
+  },
+  "2743122475": {
+    "Food": {
+      "Earth": {
+        "price": 11,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 15,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 19,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 18,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 16,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Water": {
+      "Earth": {
+        "price": 10,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 7,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 7,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 6,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 6,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 10,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Ore": {
+      "Earth": {
+        "price": 14,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 17,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 13,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 7,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 6,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 13,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Rare Minerals": {
+      "Earth": {
+        "price": 42,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 45,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 58,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 25,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 25,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 57,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Machinery": {
+      "Earth": {
+        "price": 30,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 33,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 30,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 45,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 47,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 30,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Medicine": {
+      "Earth": {
+        "price": 25,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 24,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 13,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 24,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 24,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 15,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Electronics": {
+      "Earth": {
+        "price": 32,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 32,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 19,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 35,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 33,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 25,
+        "system": "Kappa V",
+        "day": 27
+      }
+    },
+    "Luxury Goods": {
+      "Earth": {
+        "price": 52,
+        "system": "Sol",
+        "day": 1
+      },
+      "Mars": {
+        "price": 48,
+        "system": "Sol",
+        "day": 1
+      },
+      "Nova Arden": {
+        "price": 51,
+        "system": "Psi Reach",
+        "day": 10
+      },
+      "Carinae Centauri": {
+        "price": 50,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Aquilae Kepler": {
+        "price": 48,
+        "system": "Lambda V",
+        "day": 17
+      },
+      "Lyrae Refuge": {
+        "price": 51,
+        "system": "Kappa V",
+        "day": 27
       }
     }
   }

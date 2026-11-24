@@ -81,8 +81,14 @@ last_seen_by = None
 
 missions = []
 visible_missions = []
+board_missions = []      # everything on the Missions Board before the category filter
+mission_tab = 0          # Missions Board category: 0 All, 1 Cargo, 2 Survey, 3 Hacking
 selected_mission_index = 0
 completed_mission_keys = set()
+
+# Story mission "The Unsent Message" (core/story_relay.py)
+relay = None                    # {"system": ..., "station": ...} once the galaxy has one
+relay_records = False           # True once the hacked transmission is in hand
 cost_basis = {}                  # good -> [units, credits paid] for goods you bought to trade   # contracts finished this galaxy; never reposted
 
 # --- Messages -----------------------------------------------------------------
@@ -92,7 +98,12 @@ MAX_MESSAGES = 200
 message_scroll = 0   # lines scrolled up from the bottom on the MESSAGES screen
 
 
+message_serial = 0       # counts every message ever added (the log animates new ones)
+
+
 def add_message(text):
+    global message_serial
+    message_serial += 1
     messages.append(text)
     if len(messages) > MAX_MESSAGES:
         messages.pop(0)
@@ -104,6 +115,9 @@ story_char_index = 0
 last_story_time = 0.0
 story_scroll = 0         # first visible wrapped line
 story_follow = True      # keep the newest text in view while it is revealed
+
+# Launch sequence (render/launch.py): when it started; 0 = not running
+launch_start = 0.0
 
 
 # DEBUG menu interface so that I can quickly check what I am implementing
@@ -173,6 +187,11 @@ radio_index = 0
 quick_menu = False
 quick_index = 0
 
+# Autopilot wheel (TAB in a system): open?, selected slot, when it opened
+nav_wheel = False
+nav_wheel_index = 0
+nav_wheel_opened = 0.0
+
 # --- Tutorial & help -----------------------------------------------------------
 
 tutorial_started = False
@@ -195,6 +214,19 @@ market_scanner = True     # standard Long-Range System Scanner is fitted free
 market_intel = {}         # system name -> player-recorded market intelligence
 galaxy_scanned_systems = set()  # permanent exploration record
 galaxy_routes = False     # R on the galaxy chart: show trade-route heat
+
+# --- Ship menu (S): list window, see core/listmenu.py ---------------
+list_menu = None          # None | "ship"
+list_menu_index = 0
+hack_done = {}           # job key -> "done" | "failed" (core/hackjobs.py)
+hack_lock = {}           # node system -> last day its terminal is locked
+heat = 0                 # notoriety from hacking; cools over time (hackjobs.heat())
+heat_day = 0
+surveyed_objects = set()  # "System|Object" for every planet / station you have surveyed
+
+# --- Saved run ---------------------------------------------------------------------
+run_active = False      # a real (non-tutorial) run is in progress and gets auto-saved
+continue_info = None    # summary of the run in save.json for the title's Continue, or None
 
 # --- Seeds -------------------------------------------------------------------------
 last_seed = None        # galaxy seed from the previous run (save.json)

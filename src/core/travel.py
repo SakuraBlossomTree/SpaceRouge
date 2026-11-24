@@ -102,6 +102,8 @@ def check_stranded():
         cheapest = min(jump_fuel(jp) for jp in system.jump_points)
         if state.credits >= (cheapest - state.fuel) * price:
             return False                      # can buy enough for one jump
+    from core import save
+    save.clear_run()
     state.game_over_reason = ("Stranded: your tank is too low for any jump gate "
                               "and there's no fuel you can buy here.")
     state.game_state = "GAME_OVER"

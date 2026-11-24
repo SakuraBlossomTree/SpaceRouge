@@ -23,6 +23,10 @@ def compose(console, stars, title_text, story_text):
         title.draw(console, WIDTH, HEIGHT, title_text)
     elif gs == "STORY":
         story.draw(console, HEIGHT, story_text)
+    elif gs == "LAUNCH":
+        from render import launch
+        launch.draw(console, WIDTH, HEIGHT)
+        return
     elif gs == "GALAXY":
         galaxy.draw(console, WIDTH, HEIGHT, stars)
     elif gs == "SYSTEM":
@@ -56,6 +60,11 @@ def compose(console, stars, title_text, story_text):
         handbook.draw(console, WIDTH, HEIGHT)
     elif gs == "EXCHANGE":
         exchange.draw(console, WIDTH, HEIGHT)
+    elif gs == "COMPUTER":
+        from core import computer_input
+        from render import computer as computer_render
+        computer_render.draw(console, computer_input.computer)
+        return          # the computer is full-window: no HUD
 
     hud.draw(console, WIDTH, HEIGHT)
     # Map screens use the bottom rows for text, menu screens use the top rows

@@ -12,14 +12,32 @@ LOCATION_ITEMS = [
     ("4", "Bar", "bar"),
     ("5", "Refuel", "refuel"),
     ("6", "Pay Debt", "debt"),
+    ("7", "Computer", "computer"),
+    ("8", "Repair Hull", "repair"),
 ]
 
-W, H = 54, 23
+W, H = 54, 27
+
+
+def has_computer(loc=None):
+    """Earth (the planet and its orbital) has the prototype computer; the
+    Halcyon Relay's terminal runs the story mission."""
+    from core import story_relay
+    loc = loc or state.current_location
+    if loc is None:
+        return False
+    if loc.name.startswith("Earth") or story_relay.is_relay(loc):
+        return True
+    from core import hackjobs
+    return hackjobs.board(loc) is not None
 
 
 def item_status(action):
     """Return (enabled, suffix, suffix_fg) for a menu row."""
     loc = state.current_location
+    from core import story_relay
+    if story_relay.is_relay(loc) and action in ("missions", "shipyard", "refuel", "repair"):
+        return False, "offline", ui.FAINT          # a dead station: only its terminal works
     if action == "market":
         if not loc.market:
             return False, "no market", ui.FAINT
@@ -42,10 +60,33 @@ def item_status(action):
         cost = need * price
         fg = ui.GOOD if state.credits >= cost else ui.BAD
         return True, f"{ui.fmt_int(cost)} cr ({price}/u)", fg
+    if action == "repair":
+        from core import repair
+        if repair.damage() <= 0:
+            return False, "hull intact", ui.FAINT
+        full = repair.cost()
+        fg = ui.GOOD if state.credits >= full else ui.WARN
+        return True, f"{ui.fmt_int(full)} cr ({repair.PRICE_PER_HULL}/pt)", fg
     if action == "shipyard":
         from core import shipyard
         n = shipyard.available_count()
         return True, f"{n} upgrade{'s' if n != 1 else ''}" if n else "fully fitted", ui.DIM
+    if action == "computer":
+        if not has_computer(loc):
+            return False, "no terminal", ui.FAINT
+        from core import story_relay
+        if story_relay.is_relay(loc):
+            return True, "relay terminal", ui.ACCENT
+        from core import hackjobs
+        found = hackjobs.board(loc)
+        if found is not None:
+            star, via = found
+            if hackjobs.locked_until(star.name) is not None:
+                return True, "locked today", ui.WARN
+            n = hackjobs.count_available(star)
+            tag = "" if via == "terminal" else f" via {star.name}"
+            return True, f"{n} job{'s' if n != 1 else ''}{tag}", ui.ACCENT
+        return True, "hacking prototype", ui.ACCENT
     if action == "debt":
         if state.debt <= 0:
             return False, "paid off", ui.FAINT

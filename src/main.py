@@ -20,9 +20,11 @@ import tcod
 
 from pathlib import Path
 from core import state, audio, fonts, tutorial, newgame
+from core import save as savegame
+from core import missions as missions_core
 from core.events import handle_event, update_hyperspace
-from core import travel
-from render import story, ui
+from core import travel, computer_input
+from render import story, ui, launch
 from render.screen import compose
 from render_classic import screen as classic_screen
 
@@ -36,7 +38,7 @@ def update_music():
     gs = state.game_state
     if gs == "TITLE":
         audio.ensure_music(TITLE_TRACK)
-    elif gs == "STORY":
+    elif gs == "STORY" or (gs == "LAUNCH" and launch.elapsed() < launch.MUSIC_AT):
         if audio.current_music_path:
             audio.stop_music()
     else:
@@ -79,6 +81,16 @@ def main():
                 break
         state.game_state = state.DEBUG_SCREEN
 
+    # Dev entry point for the computer / hacking prototype:
+    #     python src/main.py --hack
+    #     python src/main.py --hack --mission unsent_message
+    if "--hack" in sys.argv:
+        _mission = None
+        if "--mission" in sys.argv:
+            _i = sys.argv.index("--mission")
+            _mission = sys.argv[_i + 1] if _i + 1 < len(sys.argv) else None
+        computer_input.open_computer(_mission, back_to="TITLE")
+
     state.last_story_time = time.time()
 
     with tcod.context.new(
@@ -97,11 +109,18 @@ def main():
             # --- Per-state updates ------------------------------------------
             if state.game_state == "STORY":
                 story.update(story_text)
+            elif state.game_state == "LAUNCH":
+                launch.update()
             elif state.game_state == "HYPERSPACE":
                 update_hyperspace()
             travel.update_autopilot()
             tutorial.update()
+            if state.game_state == "COMPUTER":
+                computer_input.update()
             update_music()
+
+            missions_core.check_docked()   # landing surveys pay when you dock
+            savegame.autosave()      # writes the run whenever something that matters changed
 
             # --- Draw ---------------------------------------------------------
             if fonts.ui_mode() == "classic":
@@ -114,6 +133,8 @@ def main():
             # --- Events ----------------------------------------------------
             for event in tcod.event.get():
                 if isinstance(event, tcod.event.Quit):
+                    if state.run_active:
+                        savegame.on_exit()
                     audio.shutdown()
                     raise SystemExit()
 

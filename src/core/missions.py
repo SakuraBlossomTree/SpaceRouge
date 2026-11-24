@@ -10,10 +10,11 @@ class Mission:
     def __init__(self, id, title, description, mission_type, reward_credits,
                  reward_items, status, source, destination, difficulty,
                  cargo=None, amount=None, systems_to_visit=None, dest_system=None,
-                 source_system=None, key=None):
+                 source_system=None, key=None, objective="arrive"):
         self.id = id
         self.source_system = source_system   # system the mission was posted in
         self.key = key                       # stable across regeneration
+        self.objective = objective           # survey contracts: arrive | land | scan
         self.day = None                      # in-game day this board was posted
         self.title = title
         self.mission_type = mission_type
@@ -78,11 +79,41 @@ CARGO_TEMPLATES = [
 SURVEY_TEMPLATES = [
     (
         "Survey Mission",
-        "Fly to {destination} and perform a survey scan of the system.",
+        "Fly to the {destination} system and run a survey scan when you arrive. "
+        "The data is sent back to {source} and you are paid on the spot.",
     ),
     (
         "Exploration Contract",
-        "A research group needs data from {destination}. Travel there to collect it.",
+        "A research group needs fresh data from the {destination} system. "
+        "Arrive there and your scanner does the rest; payment is immediate.",
+    ),
+]
+
+SURVEY_BONUS = 60          # extra pay on top of difficulty and distance
+SURVEY_MIN_JUMPS = 2       # a survey must send you somewhere you haven't been next door
+
+# What a survey asks of you:
+#   arrive  reach the system (paid when the jump lands)
+#   land    put down at one planet or station there (paid when you dock)
+#   scan    fly onto one planet or station and run a survey from its object
+#           menu (A), which burns a little fuel (core/survey.py)
+SURVEY_OBJECTIVES = {"arrive": 3, "land": 2, "scan": 3}      # weights
+OBJECTIVE_BONUS = {"arrive": 0, "land": 20, "scan": 45}      # the harder asks pay more
+
+LAND_TEMPLATES = [
+    (
+        "Landing Survey",
+        "Put down at {object} in the {destination} system and dock. The landing "
+        "logs are the data: {source} pays you as soon as you are docked.",
+    ),
+]
+
+SCAN_TEMPLATES = [
+    (
+        "Site Survey",
+        "{source} wants a proper survey of {object} in the {destination} system. "
+        "Fly onto it, press V to survey it (it burns "
+        "a little fuel). You are paid when the scan finishes.",
     ),
 ]
 
@@ -186,7 +217,15 @@ def generate_missions(location, current_system, all_stars, count=4, completed=()
     for i in range(count):
         # use seq instead of random
         # mission_type = types[seq.next_seed() % len(types)]  # no weights but consistent
-        mission_type = "cargo"
+        # Cargo or survey (the only two kinds with rules behind them). A separate
+        # generator picks the kind so the main sequence, and with it every cargo
+        # contract, is the same as it was before surveys existed.
+        if state.tutorial_run:
+            mission_type = "cargo"
+        else:
+            kinds = [t for t in ("cargo", "survey") if t in weights]
+            mission_type = random.Random(seed * 1009 + i).choices(
+                kinds, weights=[weights[t] for t in kinds])[0]
         difficulty = 1 + seq.next_seed() % 3
         r_min, r_max = REWARDS[difficulty]
         reward = r_min + seq.next_seed() % (r_max - r_min)
@@ -194,6 +233,13 @@ def generate_missions(location, current_system, all_stars, count=4, completed=()
         pool = [s_ for s_ in other_stars if dist[s_.name] <= MAX_JUMPS[difficulty]]
         if not pool:   # tiny/sparse galaxy: fall back to the nearest systems
             pool = sorted(other_stars, key=lambda s_: dist[s_.name])[:3]
+        if mission_type == "survey":
+            far = [s_ for s_ in other_stars
+                   if SURVEY_MIN_JUMPS <= dist[s_.name] <= MAX_JUMPS[difficulty]]
+            if far:
+                pool = far
+            else:                      # nowhere worth surveying from here
+                mission_type = "cargo"
         dest_star = pool[seq.next_seed() % len(pool)]
         dest_system  = dest_star.system
         dest_name    = (
@@ -240,8 +286,25 @@ def generate_missions(location, current_system, all_stars, count=4, completed=()
             ))
 
         elif mission_type == "survey":
-            title_t, desc_t = rng.choice(SURVEY_TEMPLATES)
-            desc = desc_t.format(destination=dest_star.name, source=source_name)
+            # what the survey asks for comes from its own generator, like the
+            # contract kind, so none of the other rolls move
+            from core import story_relay
+            obj_rng = random.Random(seed * 2003 + i)
+            places = [o for o in [*dest_system.planets, *dest_system.stations]
+                      if not story_relay.is_relay(o)]
+            objective = obj_rng.choices(list(SURVEY_OBJECTIVES),
+                                        weights=list(SURVEY_OBJECTIVES.values()))[0]
+            target = obj_rng.choice(places) if places and objective != "arrive" else None
+            if target is None:
+                objective = "arrive"
+            jumps = min(dist[dest_star.name], 99)
+            reward += REWARD_PER_JUMP[difficulty] * jumps + SURVEY_BONUS + OBJECTIVE_BONUS[objective]
+            reward = int(round(reward / 5.0)) * 5
+            templates = {"arrive": SURVEY_TEMPLATES, "land": LAND_TEMPLATES,
+                         "scan": SCAN_TEMPLATES}[objective]
+            title_t, desc_t = rng.choice(templates)
+            desc = desc_t.format(destination=dest_star.name, source=source_name,
+                                 object=target.name if target else dest_star.name)
             missions.append(Mission(
                 id=_next_id(),
                 title=title_t,
@@ -251,8 +314,11 @@ def generate_missions(location, current_system, all_stars, count=4, completed=()
                 reward_items=[],
                 status="available",
                 source=source_name,
-                destination=dest_star.name,
+                destination=target.name if target else dest_name,
+                dest_system=dest_star.name,
                 difficulty=difficulty,
+                source_system=current_system.name,
+                objective=objective,
             ))
 
         elif mission_type == "patrol":
@@ -299,3 +365,61 @@ def generate_missions(location, current_system, all_stars, count=4, completed=()
         m.key = f"{location.name}|{current_system.name}|{day}|{idx}"
         m.day = day
     return [m for m in missions if m.key not in completed]
+
+# --- Survey contracts ----------------------------------------------------------
+
+def _finish_survey(m, text):
+    m.status = "completed"
+    state.completed_mission_keys.add(m.key)
+    state.credits += m.reward_credits
+    state.add_message(f"{text} (+{m.reward_credits} credits)")
+
+
+def _chart(system_name):
+    from core import galaxy_view
+    galaxy_view.scanned_systems().add(system_name)
+
+
+def active_surveys(objective, system_name):
+    return [m for m in state.missions
+            if m.mission_type == "survey" and m.status == "active"
+            and m.objective == objective and m.dest_system == system_name]
+
+
+def complete_surveys(system_name):
+    """A jump landed in `system_name`: pay every active 'arrive' survey for it
+    (the scanner sends the data home). Returns the finished contracts."""
+    done = active_surveys("arrive", system_name)
+    for m in done:
+        _finish_survey(m, f"Survey complete: {system_name} charted for {m.source}.")
+    if done:
+        _chart(system_name)
+    return done
+
+
+def complete_landings(system_name, location_name):
+    """Docked at `location_name` in `system_name`: pay 'land' surveys for it."""
+    done = [m for m in active_surveys("land", system_name) if m.destination == location_name]
+    for m in done:
+        _finish_survey(m, f"Landing survey complete: {location_name} logged for {m.source}.")
+    if done:
+        _chart(system_name)
+    return done
+
+
+def complete_object_surveys(system_name, object_name):
+    """A survey of `object_name` just finished: pay 'scan' surveys for it."""
+    done = [m for m in active_surveys("scan", system_name) if m.destination == object_name]
+    for m in done:
+        _finish_survey(m, f"Site survey complete: {object_name} scanned for {m.source}.")
+    return done
+
+
+def check_docked():
+    """Every frame: if you are docked somewhere, landing surveys for it pay."""
+    loc = state.current_location
+    system = state.current_system
+    if (loc is None or system is None or not state.missions
+            or state.game_state not in ("LOCATION", "MARKET", "MISSIONS", "SHIPYARD")):
+        return []
+    return complete_landings(system.name, loc.name)

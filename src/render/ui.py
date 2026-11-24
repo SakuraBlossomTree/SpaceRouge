@@ -17,7 +17,9 @@ The map viewport is its own 80x60 console (the same size the world is
 generated for), so world coordinates never need translating.
 """
 
+import math
 import textwrap
+import time
 
 # ---------------------------------------------------------------------------
 # Layout
@@ -273,12 +275,15 @@ def hint_row_centered(console, cx, y, hints, *, bg=PANEL_BG):
 def menu_row(console, x, y, w, label, *, selected=False, key=None,
              enabled=True, suffix="", suffix_fg=None):
     """One selectable row: highlighted bar when selected, dim when disabled."""
-    bg = SEL_BG if selected else None
+    # the selected row breathes slowly, and its arrow blinks brighter
+    pulse = 0.5 + 0.5 * math.sin(time.time() * 5.0)
+    bg = lerp_color(SEL_BG, (40, 76, 124), pulse * 0.6) if selected else None
     if selected:
-        console.draw_rect(x, y, w, 1, ord(" "), bg=SEL_BG)
+        console.draw_rect(x, y, w, 1, ord(" "), bg=bg)
     fg = (SEL_FG if selected else TEXT) if enabled else FAINT
     cx = x + 1
-    console.print(x, y, "►" if selected else " ", fg=KEY, bg=bg)
+    console.print(x, y, "►" if selected else " ",
+                  fg=lerp_color(KEY, (255, 255, 255), pulse * 0.7), bg=bg)
     if key is not None:
         console.print(cx + 1, y, key, fg=KEY if enabled else FAINT, bg=bg)
         cx += len(key) + 3
