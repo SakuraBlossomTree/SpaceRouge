@@ -59,11 +59,13 @@ def _contract_range():
 
 def _pirates():
     from core import encounter
-    arr = round(encounter.SYSTEM_ARRIVAL_CHANCE * 100)
-    jump = round(encounter.JUMP_CHANCE * 100)
-    return ("Space isn't safe. A pirate can jump you when you dock somewhere "
-            f"(about {arr}% of the time) or when you arrive from a jump "
-            f"(about {jump}%). Each turn you get three choices:")
+    low = round(min(encounter.ARCHETYPE_JUMP_CHANCE.values()) * 100)
+    high = round(max(encounter.ARCHETYPE_JUMP_CHANCE.values()) * 100)
+    raid = round(encounter.RAID_BONUS * 100)
+    return ("Space isn't safe. A pirate can ambush you when you arrive from a "
+            f"jump: about {low}% in patrolled systems up to {high}% on the "
+            f"frontier, and {raid}% more on a route the Exchange news says is "
+            "being raided. Each turn you get three choices:")
 
 
 def _upgrade_rows():
@@ -100,6 +102,19 @@ PAGES = [
         "key, the station's facilities when docked, and every planet, station "
         "and gate in the system - pick one and the autopilot flies you there "
         "and docks (\"Nearest market\" lands you right in its Trading Post).",
+        "*Ship menu (S) and surveying (V)",
+        "S opens the ship menu (cargo, contracts, chart, refuel, repair); "
+        "SPACE still lists everything. Fly onto a planet or station and press "
+        "V to survey it: it burns a little fuel, works once per object and "
+        "finishes any site-survey contract for it.",
+        "*Hacking jobs",
+        "About one system in five is a data node: its stations have a Computer "
+        "(7) that posts 4-6 hacking jobs a day, also listed on the Missions Board "
+        "under the Hacking tab (LEFT/RIGHT switch category). Pick one, break into the "
+        "company's network, pull the sealed file and get out before the trace "
+        "hits 100% for credits. One attempt per job; a failure locks that "
+        "terminal until tomorrow and raises your heat. The Hacker Deck "
+        "(shipyard) opens the board of a node up to 2 jumps away from any dock.",
         "*Galaxy seeds",
         "Every galaxy is built from a seed number, shown on the title screen: "
         "S types one and L replays your last galaxy. The same seed always gives "
@@ -135,9 +150,14 @@ PAGES = [
     ]),
     ("Contracts", [
         "*The Missions Board",
-        "Stations post up to 4 delivery contracts a day - a fresh set each "
-        "day, and one you've finished won't come back. Accepting one loads "
+        "Stations post up to 4 contracts a day - a fresh set each "
+        "day, and one you've finished won't come back. Delivery contracts load "
         "the cargo straight into your hold, so you need the free space.",
+        "*Survey contracts",
+        "A survey sends you to another system, 2 or more jumps away. Some just "
+        "want you to arrive; some want you to dock at a named planet or station; "
+        "the hardest want a site survey: fly onto the target, press A and run "
+        "Survey (it burns a little fuel). Surveys pay on the spot, no hand-in.",
         "*Contract cargo",
         "Contract cargo is tagged with the system it came from and listed "
         "on its own rows in the cargo hold (I). It can't be sold, and goods "
@@ -201,7 +221,7 @@ PAGES = [
         "flying afterwards.",
         "*Other ways to lose",
         "You can also lose by being stranded (no fuel for any gate and "
-        "nothing left to sell for fuel) or by being destroyed in combat.",
+        "nothing left to sell for fuel).",
     ]),
     ("Ship and combat", [
         "*The shipyard",
@@ -215,9 +235,10 @@ PAGES = [
         "Defend | double your defence until your next turn",
         "Escape | try to run - a faster engine helps",
         "*Afterwards",
-        "Win and you salvage credits from the wreck. Lose and you're towed "
-        "to a station and charged 2 credits for every point of hull damage - "
-        "unless your hull hits zero, which ends the run.",
+        "Win and you salvage credits from the wreck. Lose and the pirates "
+        "plunder a quarter of your credits and leave you drifting with your "
+        "hull nearly gone. Damage stays until you pay for it: press 8 at any "
+        "station to repair (2 credits per hull point).",
     ]),
     ("The exchange", [
         "*A living economy",
@@ -256,6 +277,7 @@ PAGES = [
         "ESC | back / cancel",
         "SPACE | quick menu: any screen or place",
         "TAB | autopilot target / next station screen",
+        "V / S | survey the object you are on / ship menu",
         "1-6 | station: 1 Trade 2 Yard 3 Jobs 5 Fuel 6 Debt",
         "M / X | galaxy chart / scan mode",
         "I / L / P | cargo hold / comms log / contract log",

@@ -52,6 +52,8 @@ def check_deadline():
     if days_left() > 0:
         return False
     state.autopilot = None
+    from core import save
+    save.clear_run()
     state.game_over_reason = ("The lender repossessed the Rogue: the loan "
                               "wasn't repaid in time.")
     state.game_state = "GAME_OVER"

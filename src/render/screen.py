@@ -142,8 +142,16 @@ def _compose(console, map_con, stars, title_text, story_text):
     gs = state.game_state
     console.clear(bg=ui.BG)
 
+    if gs == "COMPUTER":
+        from core import computer_input
+        from render import computer as computer_render
+        computer_render.draw(console, computer_input.computer)
+        return
     if gs == "TITLE":
         title.draw(console, ui.SCREEN_W, ui.SCREEN_H, title_text)
+        return
+    if gs == "LAUNCH":
+        launch.draw(console, ui.SCREEN_W, ui.SCREEN_H)
         return
     if gs == "STORY":
         story.draw(console, ui.SCREEN_H, story_text, ui.SCREEN_W)
@@ -166,6 +174,12 @@ def _compose(console, map_con, stars, title_text, story_text):
         under = map_con.rgb.copy()
         quick_render.draw(map_con)
         anim.unfold(map_con, under, anim.progress("quick", UNFOLD_TIME))
+    if state.list_menu:
+        from render import listmenu as list_render
+        list_render.draw(map_con)
+    if state.nav_wheel:
+        from render import navwheel as wheel_render
+        wheel_render.draw(map_con)
 
     t, rt = _viewport_title(gs)
     ui.frame(console, 0, 0, ui.MAP_W + 2, ui.MAP_H + 2, t, right_title=rt,

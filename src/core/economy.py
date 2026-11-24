@@ -453,6 +453,10 @@ class Economy:
     def _pirate_edges(self):
         return {frozenset(e["edge"]) for e in self.effects if e["kind"] == "pirates"}
 
+    def route_raided(self, a, b):
+        """True while a pirate-raid news event is active on the a-b route."""
+        return frozenset((a, b)) in self._pirate_edges()
+
     def avg_price(self, good):
         prices = [ms.market[good] for ms in self.markets if good in ms.market]
         return sum(prices) / len(prices) if prices else BASE_PRICES.get(good, 1)

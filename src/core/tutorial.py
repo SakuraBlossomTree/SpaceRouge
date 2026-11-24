@@ -93,12 +93,12 @@ def _finish_text():
 STEPS = [
     ("Welcome aboard, pilot", _welcome, "info", None),
     ("Take the helm",
-     "Use the arrow keys to fly - it's free, but every 50 moves make a day. TAB is the "
-     "autopilot: it flies you to the next planet, station or gate.",
+     "Use the arrow keys to fly - it's free, but every 50 moves make a day. TAB opens the "
+     "autopilot wheel: pick any planet, station or gate and the ship flies you there.",
      "do", _moved),
     ("Dock at Earth",
-     "Fly onto Earth (the blue ○ on the map) - or press TAB until the "
-     "autopilot heads there - and press ENTER to dock.",
+     "Fly onto Earth (the blue ○ on the map) - or press TAB, choose Earth on the "
+     "wheel and press ENTER - and the autopilot docks you there.",
      "do", lambda: state.game_state == "LOCATION"),
     ("Visit the Trading Post",
      "Press 1, or select Trading Post and press ENTER.",

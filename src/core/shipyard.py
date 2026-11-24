@@ -27,6 +27,8 @@ UPGRADES = [
      [(1500, "Galaxy chart shows jump links 2 jumps out"),
       (4000, "Galaxy chart shows jump links 3 jumps out"),
       (9000, "Galaxy chart shows jump links 4 jumps out")]),
+    ("hackdeck", "Hacker Deck",
+     [(1500, "Portable deck: open hacking job boards from any dock (data nodes up to 2 jumps away)")]),
 ]
 
 BASE_EXCHANGE_DEPTH = scanner.RADII[0]  # standard scanner range, before upgrades
@@ -68,6 +70,7 @@ def current_text(uid):
         "hull": f"{ship.max_hull} hull",
         "scanrange": f"{scanner.range_text()} · {scanner.level_name()} scanner",
         "jumprange": f"{jump_view_range()} jump{'s' if jump_view_range() != 1 else ''}",
+        "hackdeck": "installed" if level("hackdeck") else "none",
     }[uid]
 
 

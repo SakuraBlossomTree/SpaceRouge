@@ -11,6 +11,8 @@ import numpy as np
 
 from core import state, look
 from effects.effects import get_spin_frame, twinkle_color
+from effects import motion
+from effects import transitions as anim
 from render import ui
 
 LABEL_FG = (95, 105, 135)
@@ -111,6 +113,12 @@ def draw(console, width, height, system):
     for i, jp in enumerate(system.jump_points):
         color = twinkle_color(GATE_FG, t, speed=3.0, phase=i)
         console.print(jp.x, jp.y, "Θ", fg=color)
+        motion.orbit(console, jp.x, jp.y, t, color=(60, 130, 145), speed=4.0,
+                     phase=i * 3, count=3)           # sparks circling each gate
+    for i, planet in enumerate(system.planets):
+        motion.orbit(console, planet.x, planet.y, t, speed=0.9 + 0.2 * (i % 3),
+                     phase=i * 2, count=1,
+                     color=ui.scale_color(ui.vivid(planet.color), 0.55))   # a moon
 
     for obj in objects:
         if state.system_player_x == obj.x and state.system_player_y == obj.y:
@@ -119,6 +127,11 @@ def draw(console, width, height, system):
 
     # --- player --------------------------------------------------------------
     px, py = state.system_player_x, state.system_player_y
+    motion.draw_trail(console, px, py, system.name)
+    anim.touch("arrive", id(state.current_object) if state.current_object is not None else None)
+    if state.current_object is not None:                 # arrival ripple
+        motion.ripple(console, px, py, anim.age("arrive"), life=0.7, reach=7,
+                      color=ui.GOOD)
     if state.current_object is not None:
         # docked-in-range: show the ship over a highlighted cell
         console.print(px, py, "@", fg=(0, 0, 0), bg=ui.PLAYER)
@@ -131,6 +144,7 @@ def draw(console, width, height, system):
         if 0 <= tx < width and 0 <= ty < height and (tx, ty) != (px, py):
             ch = int(console.rgb["ch"][ty, tx])
             blink = int(t * 4) % 2 == 0
+            motion.pulse_ring(console, tx, ty, t)
             console.print(tx, ty, chr(ch) if ch not in (0, 32) else "◦",
                           fg=(0, 0, 0) if blink else ui.KEY, bg=ui.KEY if blink else None)
 

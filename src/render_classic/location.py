@@ -16,4 +16,6 @@ def draw(console, width):
     console.print(10, 13, "[4] Bar")
     console.print(10, 14, "[5] Refuel")
 
-    console.print(10, 15, "ESC - Leave")
+    if state.current_location.name.startswith("Earth"):
+        console.print(10, 15, "[7] Computer")
+    console.print(10, 17, "ESC - Leave")

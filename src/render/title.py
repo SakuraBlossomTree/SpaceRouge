@@ -81,6 +81,11 @@ def draw(console, width, height, title_text):
     ui.center(console, width // 2, by + 2, "►  NEW GAME  ◄",
               fg=ui.scale_color(ui.KEY, pulse), bg=panel)
 
+    info = state.continue_info
+    if info:
+        ui.center(console, width // 2, by + 3,
+                  f"C  Continue  -  day {info['day']}  -  {info['system']}  -  {info['credits']:,} cr",
+                  fg=ui.ACCENT, bg=panel)
     ui.hint_row_centered(console, width // 2, by + 4,
                          [("ENTER", "Start"), ("F11", "Fullscreen"), ("Q", "Quit")],
                          bg=panel)

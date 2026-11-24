@@ -3,8 +3,12 @@
 Drawn on the main console every frame for all in-game screens.
 """
 
+import time
+
 from core import state
 from core.world import STAR_TYPES
+from effects import motion
+from effects import transitions as anim
 from render import ui
 
 X = ui.SIDE_X
@@ -21,21 +25,21 @@ FULLSCREEN = ("TITLE", "STORY", "LAUNCH", "GAME_OVER", "VICTORY")
 # ---------------------------------------------------------------------------
 
 HINTS = {
-    "SYSTEM": [("←↑↓→", "Fly"), ("TAB", "Autopilot"), ("ENTER", "Dock"), ("X", "Scan"),
+    "SYSTEM": [("←↑↓→", "Fly"), ("TAB", "Autopilot wheel"), ("ENTER", "Dock"),
+               ("V", "Survey"), ("S", "Ship menu"), ("X", "Scan"),
                ("M", "Galaxy"), ("I", "Cargo"), ("P", "Contracts"),
                ("L", "Log"), ("E", "Exchange"), ("O", "Radio"), ("J", "Notes"), ("K", "Prices"), ("H", "Help"), ("Q", "Menu")],
     "GALAXY": [("←↑↓→", "Scroll"), ("+/-", "Zoom (x2+ = system)"), ("Z", "Cycle zoom"),
                ("C", "Centre on you"), ("X", "Scan"), ("TAB", "Next star"),
                ("N", "Minimap"), ("R", "Routes"), ("M", "Close")],
     "JUMPPOINT": [("ENTER", "Engage jump"), ("ESC", "Cancel")],
-    "LOCATION": [("↑↓", "Select"), ("ENTER", "Open"), ("1-6", "Station shortcuts"),
+    "LOCATION": [("↑↓", "Select"), ("ENTER", "Open"), ("S", "Ship menu"), ("1-8", "Station shortcuts"),
                  ("TAB", "Next screen"), ("M", "Galaxy"), ("I", "Cargo"), ("ESC", "Undock")],
     "MARKET": [("↑↓", "Select"), ("→/B", "Buy"), ("←/S", "Sell"),
                ("TAB", "Next screen"), ("3", "Missions"), ("5", "Refuel"),
                ("ESC", "Station")],
-    "MISSIONS": [("↑↓", "Select"), ("ENTER", "Accept/Deliver"),
-                 ("V", "Show on map"), ("TAB", "Next screen"), ("1", "Trade"),
-                 ("5", "Refuel"), ("ESC", "Station")],
+    "MISSIONS": [("↑↓", "Select"), ("←→", "Category"), ("ENTER", "Accept/Do"),
+                 ("V", "Map"), ("TAB", "Next"), ("ESC", "Station")],
     "SHIPYARD": [("↑↓", "Select"), ("ENTER", "Buy"), ("TAB", "Next screen"), ("ESC", "Station")],
     "INVENTORY": [("I", "Close"), ("ESC", "Close")],
     "MESSAGES": [("↑↓", "Scroll"), ("L", "Close"), ("ESC", "Close")],
@@ -67,17 +71,27 @@ def _ship_panel(console, y, h):
     ui.frame(console, X, y, W, h, "Ship")
     ui.text(console, IX, y + 1, f"{ship.name}", fg=ui.TEXT)
     ui.text(console, IX + len(ship.name) + 1, y + 1, "· light hauler", fg=ui.DIM)
-    ui.right(console, IX + IW - 1, y + 1, f"DAY {state.day}", fg=ui.ACCENT)
+    anim.touch("day", state.day)
+    day_fg = ui.lerp_color((255, 255, 255), ui.ACCENT, anim.progress("day", 1.2))
+    ui.right(console, IX + IW - 1, y + 1, f"DAY {state.day}", fg=day_fg)
 
     from core import audio
     if audio.music_muted():
         ui.right(console, IX + IW - 1, y + 2, "♪ muted", fg=ui.FAINT)
-    ui.kv(console, IX, y + 3, IW, "Credits", f"{ui.fmt_int(state.credits)} cr",
-          value_fg=ui.KEY)
+    credits = motion.rolling("credits", state.credits, tau=0.22, snap=1)
+    way, strength = motion.recent_change("credits")
+    cr_fg = ui.lerp_color(ui.KEY, ui.GOOD if way > 0 else ui.BAD, strength) if way else ui.KEY
+    ui.kv(console, IX, y + 3, IW, "Credits", f"{ui.fmt_int(int(round(credits)))} cr",
+          value_fg=cr_fg)
 
-    ui.meter(console, IX, y + 5, "Hull", ship.hull, ship.max_hull, IW)
-    ui.meter(console, IX, y + 8, "Fuel", state.fuel, state.max_fuel, IW,
-             fmt="{:.0f}/{:.0f}")
+    hull = motion.rolling("hull", ship.hull, snap=0.2)
+    fuel = motion.rolling("fuel", state.fuel, snap=0.05)
+    blink = int(time.time() * 3) % 2 == 0
+    hull_fg = ui.BAD if ship.max_hull and ship.hull / ship.max_hull < 0.25 and blink else None
+    fuel_fg = ui.BAD if state.max_fuel and state.fuel / state.max_fuel < 0.2 and blink else None
+    ui.meter(console, IX, y + 5, "Hull", hull, ship.max_hull, IW, fg=hull_fg)
+    ui.meter(console, IX, y + 8, "Fuel", fuel, state.max_fuel, IW,
+             fmt="{:.0f}/{:.0f}", fg=fuel_fg)
     used = state.inventory.used_space()
     ui.meter(console, IX, y + 11, "Cargo", used, state.inventory.space, IW,
              fg=ui.ACCENT if used < state.inventory.space else ui.WARN)
@@ -269,17 +283,29 @@ def _log_panel(console, y, h):
     ui.frame(console, X, y, W, h, "Comms log")
     rows = h - 2
     lines = []
-    for msg in state.messages[-rows:]:
+    last = len(state.messages[-rows:]) - 1
+    for mi, msg in enumerate(state.messages[-rows:]):
         wrapped = ui.wrap(msg, IW - 2) or [""]
         for j, line in enumerate(wrapped):
-            lines.append((("» " if j == 0 else "  ") + line, ui.message_color(msg)))
+            lines.append((("» " if j == 0 else "  ") + line, ui.message_color(msg),
+                          mi == last))
     lines = lines[-rows:]
     n = len(lines)
-    for i, (line, fg) in enumerate(lines):
+    # a new message types itself in, flashing white, then settles
+    anim.touch("msg", state.message_serial)
+    new_age = anim.age("msg")
+    budget = int(new_age * 90)
+    for i, (line, fg, is_new) in enumerate(lines):
         # older lines fade out
         age = n - 1 - i
         k = 1.0 if age < 2 else max(0.45, 1.0 - age * 0.08)
-        ui.text(console, IX, y + 1 + i, line, fg=ui.scale_color(fg, k))
+        color = ui.scale_color(fg, k)
+        if is_new and new_age < 1.0:
+            take = max(0, min(len(line), budget))
+            budget -= len(line)
+            line = line[:take]
+            color = ui.lerp_color((255, 255, 255), color, new_age / 0.8)
+        ui.text(console, IX, y + 1 + i, line, fg=color)
     if not lines:
         ui.text(console, IX, y + 1, "Silence on all channels.", fg=ui.FAINT)
 
@@ -289,6 +315,10 @@ def _keys_panel(console, y, h):
     hints = HINTS.get(state.game_state, [("ESC", "Back")])
     if state.quick_menu:
         hints = [("↑↓", "Select"), ("ENTER", "Go"), ("SPACE", "Close")]
+    elif state.list_menu:
+        hints = [("↑↓", "Choose"), ("1-9", "Pick"), ("ENTER", "Do it"), ("ESC", "Close")]
+    elif state.nav_wheel:
+        hints = [("←→", "Choose"), ("ENTER", "Fly & dock"), ("F", "Fly only"), ("ESC", "Close")]
     elif state.game_state not in ("HYPERSPACE", "COMBAT"):
         hints = [("SPACE", "Quick menu")] + list(hints)
     if state.game_state == "GALAXY" and state.galaxy_preview:

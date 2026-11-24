@@ -3,13 +3,16 @@
 from core import state, shipyard
 from render import ui
 
-W, H = 62, 27
+ROWS_BASE = 5
+W, H0 = 62, 27
 
 
 def draw(console, width, height=ui.MAP_H):
     loc = state.current_location
     if loc is None:
         return
+    EXTRA = 2 * max(0, len(shipyard.UPGRADES) - ROWS_BASE)
+    H = H0 + EXTRA
     x, y = ui.window(console, W, H, f"{loc.name} · Shipyard",
                      right_title=state.current_system.archetype)
     from render.location import station_tabs
@@ -35,20 +38,20 @@ def draw(console, width, height=ui.MAP_H):
 
     uid, name, offers = shipyard.UPGRADES[state.shipyard_index]
     offer = shipyard.next_offer(uid)
-    ui.hline(console, x, y + 15, W, fg=ui.BORDER_HI)
-    ui.text(console, ix, y + 16, name.upper(), fg=ui.TITLE)
-    ui.kv(console, ix, y + 17, iw, "Now", shipyard.current_text(uid))
+    ui.hline(console, x, y + 15 + EXTRA, W, fg=ui.BORDER_HI)
+    ui.text(console, ix, y + 16 + EXTRA, name.upper(), fg=ui.TITLE)
+    ui.kv(console, ix, y + 17 + EXTRA, iw, "Now", shipyard.current_text(uid))
     if offer is None:
-        ui.kv(console, ix, y + 18, iw, "Next", "fully upgraded", value_fg=ui.GOOD)
+        ui.kv(console, ix, y + 18 + EXTRA, iw, "Next", "fully upgraded", value_fg=ui.GOOD)
     else:
         afford = state.credits >= offer[0]
-        ui.kv(console, ix, y + 18, iw, "Next", offer[1])
-        ui.kv(console, ix, y + 19, iw, "Price", f"{ui.fmt_int(offer[0])} cr",
+        ui.kv(console, ix, y + 18 + EXTRA, iw, "Next", offer[1])
+        ui.kv(console, ix, y + 19 + EXTRA, iw, "Price", f"{ui.fmt_int(offer[0])} cr",
               value_fg=ui.GOOD if afford else ui.BAD)
 
-    ui.hline(console, x, y + 21, W, fg=ui.BORDER_HI)
-    ui.kv(console, ix, y + 22, 24, "Credits", ui.fmt_int(state.credits), value_fg=ui.KEY)
-    ui.kv(console, ix + iw - 22, y + 22, 22, "Upgrades left", shipyard.available_count())
+    ui.hline(console, x, y + 21 + EXTRA, W, fg=ui.BORDER_HI)
+    ui.kv(console, ix, y + 22 + EXTRA, 24, "Credits", ui.fmt_int(state.credits), value_fg=ui.KEY)
+    ui.kv(console, ix + iw - 22, y + 22 + EXTRA, 22, "Upgrades left", shipyard.available_count())
 
     ui.hint_row_centered(console, x + W // 2, y + H - 1,
                          [("↑↓", "Select"), ("ENTER", "Buy"), ("TAB", "Next screen"),

@@ -34,6 +34,12 @@ def _close_overlay():
 
 def handle_event(event, story_text, context):
     """Dispatch a KeyDown event to the right handler based on game_state."""
+    # In-game computer (hacking subsystem): it owns every event while open
+    if state.game_state == "COMPUTER":
+        from core import computer_input
+        computer_input.handle(event, context)
+        return
+
     # Writing a note: every key (and typed text) goes to the notebook
     if state.note_input is not None:
         _note_typing(event)
@@ -76,6 +82,18 @@ def handle_event(event, story_text, context):
     # Quick menu (SPACE): while it's open it gets every key
     if state.quick_menu:
         quickmenu.handle(event)
+        return
+
+    # Ship menu (S): same
+    if state.list_menu:
+        from core import listmenu
+        listmenu.handle(event)
+        return
+
+    # Autopilot wheel (TAB): same - it owns the keyboard while open
+    if state.nav_wheel:
+        from core import navwheel
+        navwheel.handle(event)
         return
 
     # F9: switch between the modern and the classic (original) UI
@@ -244,6 +262,13 @@ def _title(event, story_text):
             state.seed_input = None
         return
 
+    # C: resume the saved run (skips the story and the tutorial)
+    if sym == tcod.event.KeySym.C and state.continue_info is not None:
+        if newgame.continue_run():
+            return
+        state.add_message("The saved run could not be loaded.")
+        return
+
     practice = tutorial.enabled()     # tutorial ON: play the practice galaxy first
 
     if sym == tcod.event.KeySym.RETURN:
@@ -253,6 +278,7 @@ def _title(event, story_text):
         else:
             # Commit the galaxy currently on the title (fresh or restored with L).
             save_progress()
+            newgame.begin_run()
         state.game_state = "STORY"
         state.story_scroll = 0
         state.story_follow = True
@@ -511,6 +537,14 @@ def _system(event, story_text):
         tcod.event.KeySym.LEFT: (-1, 0), tcod.event.KeySym.RIGHT: (1, 0),
     }
     sym = event.sym
+    if sym == tcod.event.KeySym.V:
+        from core import survey
+        survey.survey_here()                # V: survey the planet / station you are on
+        return
+    if sym == tcod.event.KeySym.S:
+        from core import listmenu
+        listmenu.open_ship_menu()           # S: the ship's everyday options
+        return
     if sym in moves:
         state.autopilot = None              # taking the stick cancels autopilot
         dx, dy = moves[sym]
@@ -518,7 +552,12 @@ def _system(event, story_text):
 
     elif sym == tcod.event.KeySym.TAB:
         shift = bool(getattr(event, "mod", 0) & tcod.event.Modifier.SHIFT)
-        travel.autopilot_next_target(-1 if shift else 1)
+        if shift:
+            travel.autopilot_next_target(-1)     # Shift+TAB: quick-cycle
+        else:
+            from core import navwheel
+            state.look_mode = False
+            navwheel.open_wheel()                # TAB: pick from the wheel
 
     elif sym in _key("RETURN", "KP_ENTER"):
         if not state.current_object:
@@ -592,10 +631,11 @@ def _station_nav(event):
     from render.location import LOCATION_ITEMS
     sym = event.sym
     number_keys = [tcod.event.KeySym.N1, tcod.event.KeySym.N2, tcod.event.KeySym.N3,
-                   tcod.event.KeySym.N4, tcod.event.KeySym.N5, tcod.event.KeySym.N6]
-    number_keys += [k for k in _key("KP_1", "KP_2", "KP_3", "KP_4", "KP_5", "KP_6")]
+                   tcod.event.KeySym.N4, tcod.event.KeySym.N5, tcod.event.KeySym.N6,
+                   tcod.event.KeySym.N7, tcod.event.KeySym.N8]
+    number_keys += [k for k in _key("KP_1", "KP_2", "KP_3", "KP_4", "KP_5", "KP_6", "KP_7", "KP_8")]
     if sym in number_keys:
-        i = number_keys.index(sym) % 6
+        i = number_keys.index(sym) % 8
         state.location_index = i
         LOCATION_ACTIONS.get(LOCATION_ITEMS[i][2], _closed)()
         return True
@@ -702,6 +742,10 @@ def _location(event, story_text):
         state.game_state = "SYSTEM"
         state.add_message(f"Undocked from {state.current_location.name}.")
         return
+    if sym == tcod.event.KeySym.S:
+        from core import listmenu
+        listmenu.open_ship_menu()
+        return
     if _station_nav(event):
         return
     if sym == tcod.event.KeySym.UP:
@@ -716,6 +760,19 @@ def _location(event, story_text):
 
     action = LOCATION_ITEMS[state.location_index][2]
     LOCATION_ACTIONS.get(action, _closed)()
+
+
+def _open_computer():
+    from render.location import has_computer
+    if not has_computer():
+        state.add_message("There is no computer terminal at this location.")
+        return
+    from core import computer_input, hackjobs, story_relay
+    if hackjobs.board(state.current_location) is not None:
+        _open_missions(tab=3)               # the Hacking tab of the Missions Board
+        return
+    mission_id = story_relay.HACK_ID if story_relay.is_relay(state.current_location) else None
+    computer_input.open_computer(mission_id, back_to="LOCATION")
 
 
 def _closed():
@@ -734,7 +791,27 @@ def _open_market():
     pricelog.record(state.current_location, state.current_system, state.day)
 
 
-def _open_missions():
+MISSION_TABS = ("All", "Cargo", "Survey", "Hacking")
+
+
+def mission_tab_of(m):
+    """Which category tab a Missions Board row belongs to (1 Cargo, 2 Survey, 3 Hacking)."""
+    return {"cargo": 1, "survey": 2, "hackjob": 3, "hack": 3}.get(m.mission_type, 1)
+
+
+def set_mission_tab(tab):
+    """Show one category (0 = all) of state.board_missions."""
+    state.mission_tab = tab % len(MISSION_TABS)
+    state.visible_missions = [m for m in state.board_missions
+                              if state.mission_tab == 0 or mission_tab_of(m) == state.mission_tab]
+    state.selected_mission_index = 0
+
+
+def _open_missions(tab=0):
+    from core import story_relay
+    if story_relay.is_relay(state.current_location):
+        state.add_message("The relay's facilities are offline.")
+        return
     state.location_index = 2
     state.game_state = "MISSIONS"
 
@@ -755,16 +832,23 @@ def _open_missions():
         state.missions = [m for m in state.missions if m.status == "active"]
         state.missions.extend(new_missions)
 
-    state.visible_missions = [
+    from core import story_relay
+    story_relay.post(state.current_location)     # the hauler's story contract (Earth only)
+
+    from core import hackjobs
+    state.board_missions = [
         m for m in state.missions
         if m.source == state.current_location.name
         or (m.status == "active" and m.destination == state.current_location.name)
-    ]
-
-    state.selected_mission_index = 0
+    ] + hackjobs.board_missions(state.current_location)
+    set_mission_tab(tab)
 
 
 def _open_shipyard():
+    from core import story_relay
+    if story_relay.is_relay(state.current_location):
+        state.add_message("The relay's facilities are offline.")
+        return
     state.location_index = 1
     state.game_state = "SHIPYARD"
 
@@ -851,6 +935,10 @@ def _debt_typing(event):
 
 
 def _refuel():
+    from core import story_relay
+    if story_relay.is_relay(state.current_location):
+        state.add_message("The relay's facilities are offline.")
+        return
     archetype = state.current_system.archetype
     price_per_unit = FUEL_PRICES.get(archetype)
 
@@ -874,7 +962,28 @@ def _refuel():
     state.add_message(f"Refueled for {cost} credits ({price_per_unit}/unit).")
 
 
+def _repair():
+    from core import repair, story_relay
+    if story_relay.is_relay(state.current_location):
+        state.add_message("The relay's facilities are offline.")
+        return
+    if repair.damage() <= 0:
+        state.add_message("Hull is already intact.")
+        return
+    full = repair.cost()
+    points, paid = repair.repair()
+    if points <= 0:
+        state.add_message(f"Not enough credits to repair. Full repair costs {full} credits.")
+    elif repair.damage() > 0:
+        state.add_message(f"Partial repair: +{points} hull for {paid} credits. "
+                          f"{repair.damage()} damage left.")
+    else:
+        state.add_message(f"Hull repaired: +{points} for {paid} credits.")
+
+
 LOCATION_ACTIONS = {
+    "repair": _repair,
+    "computer": _open_computer,
     "market": _open_market,
     "missions": _open_missions,
     "debt": _open_debt,
@@ -987,21 +1096,11 @@ def _resolve_combat_outcome(combat):
         state.add_message(f"Salvage recovered: +{combat.salvage} credits.")
 
     elif combat.outcome == CombatManager.OUTCOME_DEFEAT:
-        if state.player_ship.hull <= 0:
-            state.last_killed_by = combat.enemy.name
-            state.current_combat = None
-            state.combat_selected_action = 0
-            state.game_over_reason = f"You got killed by {state.last_killed_by}"
-            state.game_state = "GAME_OVER"
-            return
-
-        damage_taken = state.player_ship.max_hull - state.player_ship.hull
-        repair_cost = damage_taken * 2
-        state.credits = max(0, state.credits - repair_cost)
-        state.player_ship.hull = state.player_ship.max_hull
-
-        state.add_message(f"Repairs cost {repair_cost} credits.")
-        state.add_message("Dropped off at nearest station.")
+        # Losing no longer ends the run: the pirates plunder you instead.
+        from core import encounter
+        lost = encounter.apply_defeat(state.player_ship)
+        state.add_message(f"The {combat.enemy.name} plundered {lost} credits and left you drifting.")
+        state.add_message("Hull critical: dock at a station and repair it (8).")
 
         state.current_combat = None
         state.combat_selected_action = 0
@@ -1032,11 +1131,28 @@ def _missions(event, story_text):
         if state.visible_missions:
             state.selected_mission_index = (state.selected_mission_index + 1) % len(state.visible_missions)
 
+    elif event.sym == tcod.event.KeySym.LEFT:
+        set_mission_tab(state.mission_tab - 1)
+
+    elif event.sym == tcod.event.KeySym.RIGHT:
+        set_mission_tab(state.mission_tab + 1)
+
     elif event.sym == tcod.event.KeySym.RETURN:
         if not state.visible_missions:
             return
 
         mission = state.visible_missions[state.selected_mission_index]
+
+        if mission.mission_type == "hackjob":
+            if mission.status == "available":
+                from core import hackjobs
+                hackjobs.start(mission.job)
+            else:
+                state.add_message({"completed": "You already pulled this one.",
+                                   "failed": "Security burned you on this job.",
+                                   "locked": "The terminal is locked until tomorrow."}
+                                  .get(mission.status, "This job isn't available."))
+            return
 
         if mission.status == "available":
             if mission.mission_type == "cargo":
@@ -1058,7 +1174,16 @@ def _missions(event, story_text):
             mission.status = "active"
             state.add_message(f"Mission accepted: {mission.title}")
 
+        elif mission.status == "active" and mission.mission_type == "survey":
+            state.add_message("Surveys pay out by themselves when the survey is done." if mission.objective != "scan"
+                              else "Fly onto the target, press V and run the survey there.")
+
         elif mission.status == "active" and state.current_location and mission.destination == state.current_location.name:
+            if mission.mission_type == "hack":
+                from core import story_relay
+                if not story_relay.turn_in_ready(mission):
+                    state.add_message(story_relay.not_ready_message())
+                    return
             if mission.mission_type == "cargo":
                 item = entities.ITEMS[mission.cargo]
                 carried = sum(1 for i in state.inventory.items if i.mission_key == mission.key)
@@ -1080,6 +1205,9 @@ def _missions(event, story_text):
             mission.status = "completed"
             state.completed_mission_keys.add(mission.key)
             state.add_message(f"Mission complete: {mission.title} (+{mission.reward_credits} credits)")
+            if mission.mission_type == "hack":
+                from core import story_relay
+                story_relay.on_turned_in(mission)
 
         else:
             state.add_message("This mission isn't available.")
@@ -1254,6 +1382,20 @@ def _m_log(event, story_text):
     if event.sym == tcod.event.KeySym.ESCAPE:
         _close_overlay()
     
+def _maybe_ambush(origin, destination):
+    """Pirates may be waiting when a jump lands (core/encounter.py)."""
+    from core import encounter
+    archetype = getattr(state.current_system, "archetype", None)
+    combat = encounter.check_jump(state.player_ship, origin, destination, archetype)
+    if combat is None:
+        return
+    state.add_message(f"Pirates ambush you as you arrive in {destination}!")
+    state.current_combat = combat
+    state.combat_selected_action = 0
+    state.previous_state = "SYSTEM"
+    state.game_state = "COMBAT"
+
+
 def update_hyperspace():
     
     if not state.hyperspace_complete and time.time() - state.hyperspace_timer > 0.5:
@@ -1303,11 +1445,14 @@ def update_hyperspace():
                     state.hyperspace_stage = 0
 
                     state.game_state = "SYSTEM"
-                    from core import market_intel
+                    from core import market_intel, missions as missions_core
                     market_intel.refresh()
+                    missions_core.complete_surveys(destination)
                     save_progress()
                     check_deadline()
                     travel.check_stranded()
+                    if state.game_state == "SYSTEM":
+                        _maybe_ambush(origin_system, destination)
 
                     break
 
