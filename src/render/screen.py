@@ -156,6 +156,9 @@ def _compose(console, map_con, stars, title_text, story_text):
     if gs == "STORY":
         story.draw(console, ui.SCREEN_H, story_text, ui.SCREEN_W)
         return
+    if gs == "LAUNCH":
+        launch.draw(console, ui.SCREEN_W, ui.SCREEN_H)
+        return
     if gs == "GAME_OVER":
         gameover.draw(console, ui.SCREEN_W, ui.SCREEN_H)
         return
